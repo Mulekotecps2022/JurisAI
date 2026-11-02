@@ -133,3 +133,18 @@ Como as tabelas `case`, `document` e `embedding` estão vazias, a inclusão de p
 Uploads reais só serão habilitados quando: propriedade e compartilhamento estiverem aplicados; RLS e grants estiverem revisados; Storage privado estiver configurado; testes anon/sem acesso/owner/editor/viewer passarem; e validação de conteúdo, auditoria e tratamento de arquivos estiverem implementados.
 
 **Status final:** arquitetura proposta e documentada. Banco, policies e Storage permanecem inalterados.
+
+## 8. Administrador inicial da plataforma
+
+A conta inicial indicada pelo responsável pelo projeto foi localizada em `auth.users`, com convite concluído, e-mail confirmado e primeiro acesso registrado. O endereço e o UUID não são reproduzidos nesta documentação para evitar expor identificadores pessoais.
+
+A indicação da conta como **administrador inicial da plataforma** é uma decisão de provisionamento, distinta da propriedade de processos. Antes de persistir essa função em banco, a implementação deverá:
+
+- criar/definir um perfil de aplicação (`app_user_profiles`) vinculado 1:1 a `auth.users.id`, com papel de plataforma explícito e restrito;
+- atribuir o papel inicial de administrador somente à conta confirmada pelo responsável, por migration/bootstrap auditável e idempotente;
+- impedir que usuários alterem o próprio papel ou promovam outras contas pelo cliente;
+- manter a administração da plataforma separada da propriedade de processos (`case.owner_user_id`) e dos papéis de colaboração (`case_access`);
+- não conceder acesso automático ao conteúdo de processos, documentos ou embeddings apenas por ser administrador da plataforma. A leitura desses dados continuará exigindo propriedade ou vínculo de acesso, salvo fluxo administrativo excepcional, justificado e auditado;
+- executar operações privilegiadas de provisionamento exclusivamente no servidor, com credencial administrativa fora do navegador.
+
+**Estado atual:** identidade autenticada e confirmada; conta indicada para o primeiro papel administrativo. O papel ainda não foi gravado em tabela de aplicação, nenhuma migration foi aplicada e nenhuma permissão de dados jurídicos foi ampliada.

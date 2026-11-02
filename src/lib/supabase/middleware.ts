@@ -1,4 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSupabaseSession(request: NextRequest) {
@@ -18,17 +18,20 @@ export async function updateSupabaseSession(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet, headers) {
+      setAll(cookiesToSet: {
+        name: string;
+        value: string;
+        options: CookieOptions;
+      }[]) {
+        // Atualiza os cookies da requisição para que os Server Components
+        // vejam a sessão renovada nesta mesma navegação.
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+
+        // Recria a resposta e grava os cookies que serão enviados ao navegador.
         response = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options)
         );
-        if (headers) {
-          Object.entries(headers).forEach(([name, value]) =>
-            response.headers.set(name, value)
-          );
-        }
       }
     }
   });

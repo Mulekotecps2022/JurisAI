@@ -134,7 +134,7 @@ Uploads reais só serão habilitados quando: propriedade e compartilhamento esti
 
 **Status final:** arquitetura proposta e documentada. Banco, policies e Storage permanecem inalterados.
 
-## 8. Administrador inicial da plataforma
+## 9. Administrador inicial da plataforma
 
 A conta inicial indicada pelo responsável pelo projeto foi localizada em `auth.users`, com convite concluído, e-mail confirmado e primeiro acesso registrado. O endereço e o UUID não são reproduzidos nesta documentação para evitar expor identificadores pessoais.
 

@@ -40,7 +40,7 @@ A inspeção adicional consultou apenas `count(*)`, sem retornar conteúdo de li
 | `document` | 0 |
 | `embedding` | 0 |
 
-O único registro existente está em `tenentes`; ele será preservado. As demais tabelas estão vazias no momento da consulta. A contagem não identifica o significado funcional de `tenentes` nem permite concluir que `CASE` seja descartável.
+O único registro existente está em `tenentes`; ele será preservado. As demais tabelas estão vazias no momento da consulta. O usuário esclareceu que `tenentes` é o módulo legado de cadastro de clientes, partes envolvidas e responsáveis jurídicos; não representa usuário autenticado nem tenant/organização. A contagem não permite concluir que `CASE` seja descartável.
 
 ## Segurança: alerta que exige correção planejada
 
@@ -60,6 +60,10 @@ A consulta de metadados também encontrou privilégios de tabela concedidos a `a
 
 Nenhuma migration foi registrada no histórico do Supabase no momento da inspeção. Nenhuma alteração foi aplicada ao banco nesta inspeção. Não foram revogados privilégios nem ativado RLS automaticamente para evitar indisponibilidade e bloqueio de operações legítimas antes de definir a identidade, o modelo de proprietário/tenant e as políticas corretas. O advisor de segurança do Supabase confirmou os quatro alertas `rls_disabled_in_public` e o alerta `rls_enabled_no_policy` para `public.CASE`.
 
+## Significado funcional confirmado de `tenentes`
+
+O usuário confirmou que o módulo representa cadastro de clientes, partes envolvidas e responsáveis relacionados aos processos, podendo também contemplar contrapartes, advogados, parceiros e colegas. A modelagem profissional deve tratar esses registros como pessoas/entidades e associar papéis por processo. Não usar `tenentes` como tabela de usuários, organizações ou tenant de segurança. O registro atual deve ser preservado.
+
 ## Divergência importante com o protótipo
 
 O HTML antigo referencia `tenentes` e `case`, que existem. Porém, o histórico de implementação do frontend tinha variações entre `name` e `title`. O schema confirma que a tabela `case` possui `title NOT NULL`, e não possui coluna `name`. A tabela adicional `CASE` possui `Name`, mas não tem relação declarada com `tenentes` nem com `case`.
@@ -73,7 +77,7 @@ Não assumir que `CASE` é legado descartável nem que seus dados podem ser migr
 ## Próximos passos seguros
 
 1. Identificar finalidade e conteúdo de `CASE` sem expor registros sensíveis; se necessário, examinar apenas contagens e metadados agregados.
-2. Definir o modelo de identidade: a tabela `tenentes` representa usuário, organização/tenant ou outra entidade? Não presumir que seja a tabela de autenticação.
+2. Modelar pessoas/entidades e seus papéis por processo, mantendo `tenentes` como legado compatível durante a transição; separar isso do Supabase Auth.
 3. Definir proprietário e escopo de acesso de cada caso, documento e embedding.
 4. Preparar migrations versionadas para políticas RLS e privilégios mínimos, testando com usuário anônimo, autenticado e proprietário autorizado.
 5. Só então implementar operações de criação, leitura, atualização e exclusão na aplicação.

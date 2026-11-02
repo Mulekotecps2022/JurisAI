@@ -3,13 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JurisAI</title>
+    <title>JurisAI - Ligação Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
+        .card { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 15px; }
+        .status { font-weight: bold; color: #0066cc; }
+    </style>
 </head>
 <body>
     <h1>JurisAI no ar!</h1>
-    <div id="app"></div>
+    <div class="card">
+        <h3>Estado da Base de Dados:</h3>
+        <p id="status-ligacao" class="status">A testar ligação ao Supabase...</p>
+        <div id="resultado-dados"></div>
+    </div>
 
-    <!-- Ligação ao Supabase -->
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       const SUPABASE_URL = 'https://vwqzrhybemvhqsbsbfjp.supabase.co';
@@ -18,16 +27,24 @@
       const { createClient } = supabase;
       const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      async function testarLigacao() {
+      async function testarLigacaoVisivel() {
+        const statusEl = document.getElementById('status-ligacao');
+        const dadosEl = document.getElementById('resultado-dados');
+
         const { data, error } = await _supabase.from('tenentes').select('*');
+        
         if (error) {
-          console.error('Erro ao ligar ao Supabase:', error);
+          statusEl.style.color = 'red';
+          statusEl.innerText = 'Erro ao ligar ao Supabase:';
+          dadosEl.innerHTML = `<pre style="color: red;">${JSON.stringify(error, null, 2)}</pre>`;
         } else {
-          console.log('Dados dos tenentes:', data);
+          statusEl.style.color = 'green';
+          statusEl.innerText = 'Ligação bem-sucedida ao Supabase!';
+          dadosEl.innerHTML = `<p>Registos encontrados na tabela <b>tenentes</b>: ${data.length}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
         }
       }
 
-      testarLigacao();
+      testarLigacaoVisivel();
     </script>
 </body>
 </html>

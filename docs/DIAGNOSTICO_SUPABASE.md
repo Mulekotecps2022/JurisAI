@@ -26,7 +26,7 @@ O PostgreSQL diferencia identificadores com aspas e sem aspas. Portanto, `CASE` 
 - `document`: `id uuid` (gerado por `gen_random_uuid()`), `case_id uuid NULL`, `file_name text NOT NULL`, `file_path text NULL`, `created_at timestamptz NOT NULL`.
 - `embedding`: `id uuid` (gerado por `gen_random_uuid()`), `document_id uuid NULL`, `content text NOT NULL`, `vector vector NULL`, `created_at timestamptz NOT NULL`.
 
-Há chaves estrangeiras com `ON DELETE CASCADE` em `case.tenente_id`, `document.case_id` e `embedding.document_id`. A extensão `vector 0.8.2` está instalada. O tamanho/dimensão do vetor ainda precisa ser confirmado antes de implementar busca semântica.
+Há chaves estrangeiras com `ON DELETE CASCADE` em `case.tenente_id`, `document.case_id` e `embedding.document_id`. A extensão `vector 0.8.2` está instalada no schema `public`; o advisor recomenda movê-la para um schema dedicado, mas isso exige avaliar dependências antes de qualquer alteração. O tamanho/dimensão do vetor ainda precisa ser confirmado antes de implementar busca semântica. O advisor de performance também identificou ausência de índices de cobertura para as três chaves estrangeiras acima.
 
 ## Segurança: alerta que exige correção planejada
 
@@ -44,7 +44,7 @@ A consulta de metadados também encontrou privilégios de tabela concedidos a `a
 
 **Interpretação:** as quatro tabelas com RLS desabilitado não têm a barreira de políticas por linha. Com os privilégios observados, isso representa risco de exposição ou alteração indevida por chamadas que usem a API pública. Na tabela `CASE`, a ausência de políticas tende a bloquear as operações sujeitas a RLS, mas os privilégios amplos continuam precisando de revisão.
 
-Nenhuma alteração foi aplicada ao banco nesta inspeção. Não foram revogados privilégios nem ativado RLS automaticamente para evitar indisponibilidade e bloqueio de operações legítimas antes de definir a identidade, o modelo de proprietário/tenant e as políticas corretas.
+Nenhuma migration foi registrada no histórico do Supabase no momento da inspeção. Nenhuma alteração foi aplicada ao banco nesta inspeção. Não foram revogados privilégios nem ativado RLS automaticamente para evitar indisponibilidade e bloqueio de operações legítimas antes de definir a identidade, o modelo de proprietário/tenant e as políticas corretas. O advisor de segurança do Supabase confirmou os quatro alertas `rls_disabled_in_public` e o alerta `rls_enabled_no_policy` para `public.CASE`.
 
 ## Divergência importante com o protótipo
 

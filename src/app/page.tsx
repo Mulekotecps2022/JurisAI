@@ -1,12 +1,12 @@
 import Link from "next/link";
 
 const modules = [
-  { title: "Processos e casos", description: "Organização de casos, prazos e movimentações.", status: "Fundação planejada" },
-  { title: "Clientes e partes", description: "Cadastro estruturado de clientes e partes relacionadas.", status: "Fundação planejada" },
-  { title: "Documentos", description: "Biblioteca privada, classificação e análise documental.", status: "Fundação planejada" },
-  { title: "Pesquisa jurídica", description: "Pesquisa com fontes oficiais e referências verificáveis.", status: "Fundação planejada" },
-  { title: "Assistente jurídico", description: "Apoio à análise, elaboração e revisão de documentos.", status: "Fundação planejada" },
-  { title: "Auditoria e segurança", description: "Permissões, histórico de ações e proteção de dados.", status: "Fundação planejada" }
+  { title: "Processos e casos", description: "Organização de casos, prazos e movimentações.", status: "Demonstração funcional", href: "/gestao" },
+  { title: "Clientes e partes", description: "Cadastro estruturado de clientes e partes relacionadas.", status: "Demonstração funcional", href: "/gestao" },
+  { title: "Documentos", description: "Biblioteca privada, classificação e análise documental.", status: "Próxima etapa" },
+  { title: "Pesquisa jurídica", description: "Pesquisa com fontes oficiais e referências verificáveis.", status: "Planejado" },
+  { title: "Assistente jurídico", description: "Apoio à análise, elaboração e revisão de documentos.", status: "Planejado" },
+  { title: "Auditoria e segurança", description: "Permissões, histórico de ações e proteção de dados.", status: "Em preparação" }
 ];
 
 export default function Home() {
@@ -38,7 +38,10 @@ export default function Home() {
               <article key={module.title} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 className="font-semibold text-slate-900">{module.title}</h3>
                 <p className="mt-2 min-h-12 text-sm leading-6 text-slate-600">{module.description}</p>
-                <p className="mt-4 text-xs font-semibold text-juris-teal">{module.status}</p>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold text-juris-teal">{module.status}</p>
+                  {"href" in module && module.href ? <Link href={module.href} className="text-sm font-semibold text-juris-navy hover:underline">Abrir módulo →</Link> : null}
+                </div>
               </article>
             ))}
           </div>

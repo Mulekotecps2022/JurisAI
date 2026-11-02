@@ -6,7 +6,7 @@ Plataforma privada de gestão e inteligência jurídica.
 
 O projeto está em migração gradual do protótipo HTML para uma aplicação Next.js com TypeScript. O protótipo original permanece no arquivo `index.html` como referência e não foi removido.
 
-A nova interface inicial está em `src/app`. A integração SSR com Supabase está preparada com publishable key e atualização de sessão por middleware. A autenticação ainda não protege módulos de negócio; nenhuma operação de dados jurídicos será liberada antes das políticas RLS.
+A nova interface inicial está em `src/app`. A integração SSR com Supabase está preparada com publishable key, atualização de sessão por middleware e fluxo de acesso por link de e-mail em `/login`. O fluxo não permite cadastro público (`shouldCreateUser: false`); contas precisam ser provisionadas no Supabase Auth. A autenticação ainda não protege módulos de negócio; nenhuma operação de dados jurídicos será liberada antes das políticas RLS.
 
 ## Requisitos
 
@@ -16,7 +16,7 @@ A nova interface inicial está em `src/app`. A integração SSR com Supabase est
 ## Desenvolvimento local
 
 1. Copie `.env.example` para `.env.local`.
-2. Preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no ambiente local, usando a publishable key do projeto. Não use a service-role/secret key no navegador.
+2. Preencha `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` no ambiente local, usando a publishable key do projeto. Não use a service-role/secret key no navegador. No Supabase Auth, inclua as URLs locais e de produção na lista de Redirect URLs, incluindo `/auth/confirm`.
 3. Instale dependências com `npm install`.
 4. Inicie com `npm run dev`.
 

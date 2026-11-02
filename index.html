@@ -3,18 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JurisAI - Ligação Supabase</title>
+    <title>JurisAI - Gestão de Tenentes</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
         .card { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 15px; }
-        .status { font-weight: bold; color: #0066cc; }
+        .status { font-weight: bold; color: green; }
+        input, button { width: 100%; padding: 10px; margin-top: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #0066cc; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #004999; }
+        pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
     </style>
 </head>
 <body>
-    <h1>JurisAI no ar!</h1>
+    <h1>JurisAI</h1>
+    
     <div class="card">
-        <h3>Estado da Base de Dados:</h3>
-        <p id="status-ligacao" class="status">A iniciar teste...</p>
+        <h3>Adicionar Novo Registo</h3>
+        <input type="text" id="nome-tenente" placeholder="Nome do tenente ou cliente...">
+        <button onclick="inserirRegisto()">Guardar na Base de Dados</button>
+    </div>
+
+    <div class="card">
+        <h3>Estado e Registos:</h3>
+        <p id="status-ligacao" class="status">A carregar dados...</p>
         <div id="resultado-dados"></div>
     </div>
 
@@ -22,35 +33,53 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       const SUPABASE_URL = 'https://vwqzrhybemvhqsbsbfjp.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cXpyaHliZW12aHFzYnNiZmpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MTI1NDksImV4cCI6MjEwOTE4ODU0OX0.j5YOVbXx9vxKfCmIe4XdmRv17BySZRTr_-0knafvs9o';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cXpyaHliZW12aHFzYnNiZmpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMTcwNzYsImV4cCI6MjA1Njc5MzA3Nn0.vRzS...'; // (Mantenha a sua chave longa correta aqui)
 
-      async function executarTeste() {
+      const { createClient } = supabase;
+      const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      async function carregarRegistos() {
         const statusEl = document.getElementById('status-ligacao');
         const dadosEl = document.getElementById('resultado-dados');
 
-        try {
-          const { createClient } = supabase;
-          const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-          const { data, error } = await _supabase.from('tenentes').select('*');
-          
-          if (error) {
-            statusEl.style.color = 'red';
-            statusEl.innerText = 'Erro na base de dados:';
-            dadosEl.innerHTML = `<pre style="color: red;">${JSON.stringify(error, null, 2)}</pre>`;
-          } else {
-            statusEl.style.color = 'green';
-            statusEl.innerText = 'Ligação bem-sucedida!';
-            dadosEl.innerHTML = `<p>Registos encontrados: ${data.length}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
-          }
-        } catch (err) {
+        const { data, error } = await _supabase.from('tenentes').select('*');
+        
+        if (error) {
           statusEl.style.color = 'red';
-          statusEl.innerText = 'Erro crítico no script:';
-          dadosEl.innerHTML = `<pre style="color: red;">${err.message}</pre>`;
+          statusEl.innerText = 'Erro ao carregar dados';
+          dadosEl.innerHTML = `<pre style="color: red;">${JSON.stringify(error, null, 2)}</pre>`;
+        } else {
+          statusEl.style.color = 'green';
+          statusEl.innerText = 'Ligação bem-sucedida!';
+          dadosEl.innerHTML = `<p><b>Total de registos:</b> ${data.length}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
         }
       }
 
-      executarTeste();
+      async function inserirRegisto() {
+        const nomeInput = document.getElementById('nome-tenente');
+        const valor = nomeInput.value.trim();
+
+        if (!valor) {
+          alert('Por favor, escreva um nome!');
+          return;
+        }
+
+        // Nota: Assumimos que a tabela tem uma coluna chamada 'name' ou 'nome'. 
+        // Se a sua coluna tiver outro nome, ajuste abaixo.
+        const { data, error } = await _supabase
+          .from('tenentes')
+          .insert([{ name: valor }]);
+
+        if (error) {
+          alert('Erro ao inserir: ' + error.message);
+        } else {
+          alert('Registo guardado com sucesso!');
+          nomeInput.value = '';
+          carregarRegistos();
+        }
+      }
+
+      carregarRegistos();
     </script>
 </body>
 </html>

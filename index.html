@@ -177,7 +177,7 @@
         <div class="card">
             <h3>Novo Caso Jurídico</h3>
             <input type="text" id="titulo-caso" placeholder="Título ou descrição do caso...">
-            <button onclick="inserirCaso()" style="background: #0f766e;">Guardar Caso</button>
+            <button onclick="inserirCaso()" style="background: #0f766e;">Guardar o caso</button>
         </div>
 
         <div class="card">
@@ -242,7 +242,7 @@
 
         // Acedendo à tabela 'Case' com C maiúsculo
         const { data, error } = await _supabase
-          .from('Case')
+          .from('case')
           .select('*')
           .order('created_at', { ascending: false });
         

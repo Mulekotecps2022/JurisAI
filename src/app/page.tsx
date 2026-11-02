@@ -3,7 +3,7 @@ import Link from "next/link";
 const modules = [
   { title: "Processos e casos", description: "Organização de casos, prazos e movimentações.", status: "Demonstração funcional", href: "/gestao" },
   { title: "Clientes e partes", description: "Cadastro estruturado de clientes e partes relacionadas.", status: "Demonstração funcional", href: "/gestao" },
-  { title: "Documentos", description: "Biblioteca privada, classificação e análise documental.", status: "Próxima etapa" },
+  { title: "Documentos", description: "Biblioteca documental, classificação e acompanhamento da análise.", status: "Demonstração funcional", href: "/documentos" },
   { title: "Pesquisa jurídica", description: "Pesquisa com fontes oficiais e referências verificáveis.", status: "Planejado" },
   { title: "Assistente jurídico", description: "Apoio à análise, elaboração e revisão de documentos.", status: "Planejado" },
   { title: "Auditoria e segurança", description: "Permissões, histórico de ações e proteção de dados.", status: "Em preparação" }

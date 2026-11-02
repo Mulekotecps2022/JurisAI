@@ -72,12 +72,16 @@ Aplicação jurídica de uso próprio e aprendizado, com padrão de qualidade pr
 
 ## Estado técnico verificado em 02/11/2026
 
-- A branch de trabalho contém atualmente `index.html` e `README.md`; o README estava vazio.
-- A página atual é um protótipo HTML com cliente Supabase no navegador.
-- O arquivo contém referências às tabelas `tenentes` e `case`, mas a estrutura real dessas tabelas ainda não foi confirmada.
-- Não foram localizados, na raiz da branch, arquivos de migração, configuração Supabase, pacote Next.js ou testes automatizados.
-- Correções recentes no protótipo: escape de mensagens e títulos antes da renderização; padronização da tabela `case`; datas em localidade `pt-BR`.
-- Ainda não foi comprovado o funcionamento em navegador nem a integração real com o Supabase.
+- O protótipo HTML legado permanece preservado em `index.html`.
+- A estrutura profissional Next.js/TypeScript/Tailwind está criada em `src/`, com configuração de ambiente e clientes Supabase de navegador/servidor.
+- O schema real do projeto Supabase foi inspecionado e os tipos TypeScript foram gerados diretamente dele em `src/types/database.ts`.
+- A integração de build Cloudflare Workers foi preparada com OpenNext e Wrangler.
+- A CI executou com sucesso: instalação de dependências, lint, typecheck, build Next.js e build Cloudflare Workers (run 41543910251).
+- O schema real, relações, contagens agregadas e alertas RLS estão documentados em `docs/DIAGNOSTICO_SUPABASE.md`.
+- O significado funcional de `tenentes` foi esclarecido pelo usuário: módulo de cadastro de clientes, partes e responsáveis relacionados aos processos, não usuários nem organizações/tenants de autenticação.
+- A tabela `CASE` em maiúsculas continua sem finalidade confirmada; não será apagada nem combinada com `case` por suposição.
+- As operações definitivas e migrations de negócio continuam bloqueadas até o desenho das relações e políticas de acesso.
+- A `main` permanece intacta; todas as alterações seguem isoladas na branch de trabalho.
 
 ## Regras de segurança e integridade
 
@@ -101,3 +105,19 @@ Referências técnicas consultadas:
 - OpenNext Cloudflare: https://opennext.js.org/cloudflare
 - Cloudflare Workers — OpenNext: https://developers.cloudflare.com/workers/framework-guides/web-apps/opennext/
 - Next.js 15.5.28: https://www.npmjs.com/package/next
+
+
+## Modelo de domínio: pessoas e partes
+
+O usuário esclareceu que o módulo legado chamado `tenentes` é destinado ao cadastro de clientes, partes envolvidas, responsáveis e outros participantes jurídicos. O nome não representa o conceito de tenant/organização nem o cadastro de usuários autenticados.
+
+Diretriz de modelagem:
+- Tratar o conceito funcional como **Pessoas e Partes**.
+- Uma pessoa/entidade pode assumir mais de um papel e pode exercer papéis distintos em processos diferentes.
+- Papéis iniciais previstos: cliente, parte autora, parte ré/contraparte, advogado, responsável, parceiro/colaborador e outro.
+- A relação entre pessoa e processo deve ser explícita e permitir papel/contexto por processo; não reduzir todos os participantes a um único campo de texto.
+- O registro legado existente em `tenentes` deve ser preservado durante a transição.
+- A tabela física `tenentes` pode permanecer temporariamente por compatibilidade; eventual renomeação/migração exige plano de compatibilidade, revisão das políticas e testes.
+- Usuários autenticados são uma entidade separada, vinculada ao Supabase Auth. O isolamento de dados deverá usar uma relação explícita de propriedade/acesso (por exemplo, `owner_user_id` e, se necessário, `workspace_id`), não o identificador de `tenentes`.
+
+Não aplicar DDL até concluir o desenho de propriedade e o mapeamento de compatibilidade.

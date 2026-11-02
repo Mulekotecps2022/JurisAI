@@ -236,7 +236,7 @@
 
         let html = '<ul class="lista-itens">';
         data.forEach(item => {
-          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-PT') : '';
+          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-BR') : '';
           html += `<li class="item-registo"><span class="item-nome">${escapeHTML(item.name || 'Sem nome')}</span><span class="item-data">${dataF}</span></li>`;
         });
         html += '</ul>';
@@ -254,7 +254,7 @@
           .order('created_at', { ascending: false });
         
         if (error) {
-          listaEl.innerHTML = `<p class="vazio" style="color: red;">Erro: ${error.message}</p>`;
+          listaEl.innerHTML = `<p class="vazio" style="color: red;">Erro: ${escapeHTML(error.message)}</p>`;
           return;
         }
 
@@ -267,7 +267,7 @@
 
         let html = '<ul class="lista-itens">';
         data.forEach(item => {
-          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-PT') : '';
+          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-BR') : '';
           const titulo = item.title || item.name || 'Caso sem título';
           html += `<li class="item-registo"><span class="item-nome">${escapeHTML(titulo)}</span><span class="item-data">${dataF}</span></li>`;
         });

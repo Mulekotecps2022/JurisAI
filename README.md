@@ -23,9 +23,16 @@ A nova interface inicial está em `src/app`. A integração com Supabase está p
 ## Comandos
 
 - `npm run dev`: servidor local.
-- `npm run build`: build de produção.
+- `npm run build`: build Next.js de produção.
+- `npm run build:cf`: adapta a build para Cloudflare Workers.
+- `npm run preview:cf`: executa a versão adaptada localmente no runtime Workers.
+- `npm run deploy:cf`: publica no Cloudflare (requer autenticação e autorização de deploy).
 - `npm run typecheck`: verificação TypeScript.
 - `npm run lint`: análise estática.
+
+## Cloudflare Workers
+
+A implantação está preparada com OpenNext e Wrangler. A configuração fica em `wrangler.jsonc` e `open-next.config.ts`. O deploy não foi executado; exige autenticação Cloudflare e validação do build no runtime Workers. Não configure segredos no repositório.
 
 ## Supabase
 

@@ -28,7 +28,7 @@ export default function LoginPage() {
       if (authError) throw authError;
       setMessage("Se o endereço estiver cadastrado e autorizado, você receberá um link de acesso por e-mail.");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Não foi possível solicitar o acesso.");
+      setError("Não foi possível solicitar o acesso. Confira a configuração e tente novamente mais tarde.");
     } finally {
       setLoading(false);
     }

@@ -14,7 +14,7 @@
     <h1>JurisAI no ar!</h1>
     <div class="card">
         <h3>Estado da Base de Dados:</h3>
-        <p id="status-ligacao" class="status">A testar ligação ao Supabase...</p>
+        <p id="status-ligacao" class="status">A iniciar teste...</p>
         <div id="resultado-dados"></div>
     </div>
 
@@ -22,29 +22,35 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       const SUPABASE_URL = 'https://vwqzrhybemvhqsbsbfjp.supabase.co';
-      const SUPABASE_ANON_KEY = sb_publishable_Lluto1E3C6ciVxkyxqGWPg_3Ys4eXFM';
+      const SUPABASE_ANON_KEY = 'cole_a_sua_chave_aqui';
 
-      const { createClient } = supabase;
-      const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-      async function testarLigacaoVisivel() {
+      async function executarTeste() {
         const statusEl = document.getElementById('status-ligacao');
         const dadosEl = document.getElementById('resultado-dados');
 
-        const { data, error } = await _supabase.from('tenentes').select('*');
-        
-        if (error) {
+        try {
+          const { createClient } = supabase;
+          const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+          const { data, error } = await _supabase.from('tenentes').select('*');
+          
+          if (error) {
+            statusEl.style.color = 'red';
+            statusEl.innerText = 'Erro na base de dados:';
+            dadosEl.innerHTML = `<pre style="color: red;">${JSON.stringify(error, null, 2)}</pre>`;
+          } else {
+            statusEl.style.color = 'green';
+            statusEl.innerText = 'Ligação bem-sucedida!';
+            dadosEl.innerHTML = `<p>Registos encontrados: ${data.length}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+          }
+        } catch (err) {
           statusEl.style.color = 'red';
-          statusEl.innerText = 'Erro ao ligar ao Supabase:';
-          dadosEl.innerHTML = `<pre style="color: red;">${JSON.stringify(error, null, 2)}</pre>`;
-        } else {
-          statusEl.style.color = 'green';
-          statusEl.innerText = 'Ligação bem-sucedida ao Supabase!';
-          dadosEl.innerHTML = `<p>Registos encontrados na tabela <b>tenentes</b>: ${data.length}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+          statusEl.innerText = 'Erro crítico no script:';
+          dadosEl.innerHTML = `<pre style="color: red;">${err.message}</pre>`;
         }
       }
 
-      testarLigacaoVisivel();
+      executarTeste();
     </script>
 </body>
 </html>

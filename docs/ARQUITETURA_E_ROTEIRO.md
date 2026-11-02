@@ -87,3 +87,17 @@ Aplicação jurídica de uso próprio e aprendizado, com padrão de qualidade pr
 - Documentos jurídicos e dados pessoais devem ter acesso restrito, armazenamento privado e rastreabilidade.
 - Pesquisa por IA não deve apresentar conteúdo gerado como fonte jurídica: cada fundamento deve apontar para a fonte consultada.
 - Não fazer merge na branch principal sem autorização do usuário.
+
+
+## Atualização de compatibilidade Cloudflare — 02/11/2026
+
+A fundação passou a incluir OpenNext Cloudflare e Wrangler, com configuração em `wrangler.jsonc` e `open-next.config.ts`. O adaptador permite executar a aplicação Next.js no runtime Workers; a publicação ainda depende de autenticação Cloudflare e validação do build adaptado.
+
+A versão mínima do Next.js foi elevada para a linha 15.5.28: além de atender ao piso de compatibilidade documentado pelo adaptador OpenNext 1.20.15 (15.5.27 ou superior), evita permanecer na versão 15.5.6 inicial, que antecede correções de segurança posteriores. A aplicação permanece em Next.js 15 por compatibilidade gradual; não se adotou um salto major sem testes.
+
+A documentação atual da Cloudflare também apresenta vinext como caminho recomendado para novos projetos. Como a fundação já foi estabelecida em Next.js e o escopo arquitetural definido pelo projeto prevê Next.js, OpenNext foi adotado nesta fase para preservar compatibilidade com o framework escolhido. A alternativa vinext poderá ser reavaliada em uma etapa própria, mediante testes de compatibilidade dos módulos.
+
+Referências técnicas consultadas:
+- OpenNext Cloudflare: https://opennext.js.org/cloudflare
+- Cloudflare Workers — OpenNext: https://developers.cloudflare.com/workers/framework-guides/web-apps/opennext/
+- Next.js 15.5.28: https://www.npmjs.com/package/next

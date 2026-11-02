@@ -3,57 +3,213 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JurisAI - Gestão de Tenentes</title>
+    <title>JurisAI - Gestão Jurídica Inteligente</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
-        .card { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 15px; }
-        .status { font-weight: bold; color: green; }
-        input, button { width: 100%; padding: 10px; margin-top: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #0066cc; color: white; border: none; font-weight: bold; cursor: pointer; }
-        button:hover { background: #004999; }
-        pre { background: #eee; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+        :root {
+            --primary: #1e3a8a;
+            --primary-hover: #1e40af;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            color: var(--primary);
+            margin: 0 0 4px 0;
+            font-size: 24px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 16px;
+            color: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .lista-itens {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0 0 0;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .item-registo {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .item-registo:last-child {
+            border-bottom: none;
+        }
+
+        .item-nome {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .item-data {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .vazio {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 16px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
-    <h1>JurisAI</h1>
-    
-    <div class="card">
-        <h3>Adicionar Novo Registo</h3>
-        <input type="text" id="nome-tenente" placeholder="Nome do tenente ou cliente...">
-        <button onclick="inserirRegisto()">Guardar na Base de Dados</button>
-    </div>
+    <div class="container">
+        <header>
+            <h1>JurisAI</h1>
+            <p>Plataforma de Gestão e Inteligência Jurídica</p>
+        </header>
 
-    <div class="card">
-        <h3>Estado e Registos:</h3>
-        <p id="status-ligacao" class="status">A carregar dados...</p>
-        <div id="resultado-dados"></div>
+        <!-- Cartão de Inserção -->
+        <div class="card">
+            <h3>Novo Registo</h3>
+            <input type="text" id="nome-tenente" placeholder="Nome do tenente ou cliente...">
+            <button onclick="inserirRegisto()">Guardar Registo</button>
+        </div>
+
+        <!-- Cartão de Listagem / Dashboard -->
+        <div class="card">
+            <h3>
+                <span>Registos na Base de Dados</span>
+                <span id="badge-total" class="status-badge">0 ativos</span>
+            </h3>
+            <div id="conteudo-lista">
+                <p class="vazio">A carregar dados...</p>
+            </div>
+        </div>
     </div>
 
     <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       const SUPABASE_URL = 'https://vwqzrhybemvhqsbsbfjp.supabase.co';
-      
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cXpyaHliZW12aHFzYnNiZmpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MTI1NDksImV4cCI6MjEwOTE4ODU0OX0.j5YOVbXx9vxKfCmIe4XdmRv17BySZRTr_-0knafvs9o';
+      const SUPABASE_ANON_KEY = 'SUA_CHAVE_JWT_LONGA_AQUI'; // Mantenha a sua chave funcional
 
       const { createClient } = supabase;
       const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       async function carregarRegistos() {
-        const statusEl = document.getElementById('status-ligacao');
-        const dadosEl = document.getElementById('resultado-dados');
+        const conteudoLista = document.getElementById('conteudo-lista');
+        const badgeTotal = document.getElementById('badge-total');
 
-        const { data, error } = await _supabase.from('tenentes').select('*');
+        const { data, error } = await _supabase
+          .from('tenentes')
+          .select('*')
+          .order('created_at', { ascending: false });
         
         if (error) {
-          statusEl.style.color = 'red';
-          statusEl.innerText = 'Erro ao carregar dados';
-          dadosEl.innerHTML = `<pre style="color: red;">${JSON.stringify(error, null, 2)}</pre>`;
-        } else {
-          statusEl.style.color = 'green';
-          statusEl.innerText = 'Ligação bem-sucedida!';
-          dadosEl.innerHTML = `<p><b>Total de registos:</b> ${data.length}</p><pre>${JSON.stringify(data, null, 2)}</pre>`;
+          conteudoLista.innerHTML = `<p class="vazio" style="color: red;">Erro ao carregar: ${error.message}</p>`;
+          return;
         }
+
+        badgeTotal.innerText = `${data.length} registos`;
+
+        if (data.length === 0) {
+          conteudoLista.innerHTML = `<p class="vazio">Nenhum registo encontrado.</p>`;
+          return;
+        }
+
+        let html = '<ul class="lista-itens">';
+        data.forEach(item => {
+          const dataFormatada = item.created_at ? new Date(item.created_at).toLocaleString('pt-PT') : 'Data não disponível';
+          html += `
+            <li class="item-registo">
+                <span class="item-nome">${item.name || 'Sem nome'}</span>
+                <span class="item-data">Adicionado a: ${dataFormatada}</span>
+            </li>
+          `;
+        });
+        html += '</ul>';
+
+        conteudoLista.innerHTML = html;
       }
 
       async function inserirRegisto() {
@@ -61,18 +217,17 @@
         const valor = nomeInput.value.trim();
 
         if (!valor) {
-          alert('Por favor, escreva um nome!');
+          alert('Por favor, preencha o campo com um nome.');
           return;
         }
 
-        const { data, error } = await _supabase
+        const { error } = await _supabase
           .from('tenentes')
           .insert([{ name: valor }]);
 
         if (error) {
-          alert('Erro ao inserir: ' + error.message);
+          alert('Erro ao guardar: ' + error.message);
         } else {
-          alert('Registo guardado com sucesso!');
           nomeInput.value = '';
           carregarRegistos();
         }

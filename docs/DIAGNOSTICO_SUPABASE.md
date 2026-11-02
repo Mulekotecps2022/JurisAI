@@ -28,6 +28,20 @@ O PostgreSQL diferencia identificadores com aspas e sem aspas. Portanto, `CASE` 
 
 Há chaves estrangeiras com `ON DELETE CASCADE` em `case.tenente_id`, `document.case_id` e `embedding.document_id`. A extensão `vector 0.8.2` está instalada no schema `public`; o advisor recomenda movê-la para um schema dedicado, mas isso exige avaliar dependências antes de qualquer alteração. O tamanho/dimensão do vetor ainda precisa ser confirmado antes de implementar busca semântica. O advisor de performance também identificou ausência de índices de cobertura para as três chaves estrangeiras acima.
 
+## Contagem de registros (somente agregados)
+
+A inspeção adicional consultou apenas `count(*)`, sem retornar conteúdo de linhas:
+
+| Tabela | Registros |
+|---|---:|
+| `tenentes` | 1 |
+| `case` | 0 |
+| `CASE` | 0 |
+| `document` | 0 |
+| `embedding` | 0 |
+
+O único registro existente está em `tenentes`; ele será preservado. As demais tabelas estão vazias no momento da consulta. A contagem não identifica o significado funcional de `tenentes` nem permite concluir que `CASE` seja descartável.
+
 ## Segurança: alerta que exige correção planejada
 
 Estado de Row Level Security observado:

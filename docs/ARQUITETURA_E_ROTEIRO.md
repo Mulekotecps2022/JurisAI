@@ -121,3 +121,12 @@ Diretriz de modelagem:
 - Usuários autenticados são uma entidade separada, vinculada ao Supabase Auth. O isolamento de dados deverá usar uma relação explícita de propriedade/acesso (por exemplo, `owner_user_id` e, se necessário, `workspace_id`), não o identificador de `tenentes`.
 
 Não aplicar DDL até concluir o desenho de propriedade e o mapeamento de compatibilidade.
+
+
+## Fundação de domínio e segurança — 02/11/2026
+
+- Criados contratos de validação Zod para cadastro de pessoas/entidades e associação de participantes a processos em `src/features/participants/domain.ts`.
+- Criados contratos de processo e papéis de acesso (`owner`, `editor`, `viewer`) em `src/features/cases/domain.ts`.
+- Os papéis jurídicos (cliente, autor, réu, advogado, testemunha etc.) são separados dos papéis de autorização do usuário.
+- Criado `docs/MODELO_DE_SEGURANCA.md` com desenho de identidade, propriedade, compartilhamento, RLS e Storage.
+- Nenhuma operação de negócio foi conectada ao banco e nenhuma migration foi aplicada. A implementação continua protegida contra o estado atual de RLS insuficiente.

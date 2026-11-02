@@ -46,3 +46,9 @@ Leia `docs/DIAGNOSTICO_SUPABASE.md` e execute o diagnóstico somente leitura em 
 ## Segurança
 
 Nunca commitar `.env.local`, service-role keys, tokens privados ou dados reais de clientes/processos. A chave anon/public não substitui políticas RLS no banco.
+
+
+## Modelo de domínio
+
+- [Modelo de domínio — Pessoas e Partes](docs/MODELO_DE_DOMINIO.md)
+- [Diagnóstico real do Supabase](docs/DIAGNOSTICO_SUPABASE.md)

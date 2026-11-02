@@ -52,3 +52,4 @@ Nunca commitar `.env.local`, service-role keys, tokens privados ou dados reais d
 
 - [Modelo de domínio — Pessoas e Partes](docs/MODELO_DE_DOMINIO.md)
 - [Diagnóstico real do Supabase](docs/DIAGNOSTICO_SUPABASE.md)
+- [Modelo de segurança e autorização](docs/MODELO_DE_SEGURANCA.md)

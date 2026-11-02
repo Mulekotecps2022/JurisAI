@@ -138,3 +138,12 @@ Não aplicar DDL até concluir o desenho de propriedade e o mapeamento de compat
 - Criada atualização de sessão em `src/lib/supabase/middleware.ts`, invocada por `src/middleware.ts`, usando `auth.getClaims()` para validar claims e permitir renovação de sessão.
 - A camada de sessão não substitui autorização. Rotas privadas e operações de dados ainda devem validar identidade e depender das políticas RLS; a página inicial permanece apenas um painel estrutural sem dados de negócio.
 - Ambientes sem credenciais continuam compiláveis, mas a integração de sessão só opera depois de configurar as variáveis no ambiente de execução.
+
+
+## Autenticação inicial — 02/11/2026
+
+- Criada página `/login` com solicitação de link por e-mail via Supabase Auth.
+- O fluxo usa `shouldCreateUser: false`: não há cadastro público pela interface; usuários devem ser provisionados pelo administrador do projeto.
+- Criada rota `/auth/confirm` para troca segura do código PKCE por sessão, com validação de destino relativo para evitar open redirect.
+- Middleware renova/valida claims da sessão; a proteção das rotas de negócio ainda será aplicada junto com as políticas RLS.
+- O Supabase Auth deve ter `/auth/confirm` e os domínios de desenvolvimento/produção configurados na allow list de Redirect URLs.

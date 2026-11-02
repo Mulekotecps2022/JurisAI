@@ -147,3 +147,5 @@ Não aplicar DDL até concluir o desenho de propriedade e o mapeamento de compat
 - Criada rota `/auth/confirm` para troca segura do código PKCE por sessão, com validação de destino relativo para evitar open redirect.
 - Middleware renova/valida claims da sessão; a proteção das rotas de negócio ainda será aplicada junto com as políticas RLS.
 - O Supabase Auth deve ter `/auth/confirm` e os domínios de desenvolvimento/produção configurados na allow list de Redirect URLs.
+
+- A tela de login usa mensagem genérica para não revelar se um e-mail existe; o callback valida a origem do redirecionamento para evitar open redirect.

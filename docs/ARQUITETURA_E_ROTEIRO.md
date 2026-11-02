@@ -130,3 +130,11 @@ Não aplicar DDL até concluir o desenho de propriedade e o mapeamento de compat
 - Os papéis jurídicos (cliente, autor, réu, advogado, testemunha etc.) são separados dos papéis de autorização do usuário.
 - Criado `docs/MODELO_DE_SEGURANCA.md` com desenho de identidade, propriedade, compartilhamento, RLS e Storage.
 - Nenhuma operação de negócio foi conectada ao banco e nenhuma migration foi aplicada. A implementação continua protegida contra o estado atual de RLS insuficiente.
+
+
+## Sessão Supabase SSR — 02/11/2026
+
+- Variável pública padronizada para `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; não utilizar service-role/secret key no cliente.
+- Criada atualização de sessão em `src/lib/supabase/middleware.ts`, invocada por `src/middleware.ts`, usando `auth.getClaims()` para validar claims e permitir renovação de sessão.
+- A camada de sessão não substitui autorização. Rotas privadas e operações de dados ainda devem validar identidade e depender das políticas RLS; a página inicial permanece apenas um painel estrutural sem dados de negócio.
+- Ambientes sem credenciais continuam compiláveis, mas a integração de sessão só opera depois de configurar as variáveis no ambiente de execução.

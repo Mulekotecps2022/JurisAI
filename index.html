@@ -107,16 +107,16 @@
             list-style: none;
             padding: 0;
             margin: 12px 0 0 0;
-            max-height: 250px;
+            max-height: 200px;
             overflow-y: auto;
         }
 
         .item-registo {
-            padding: 12px;
+            padding: 10px;
             border-bottom: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 2px;
         }
 
         .item-registo:last-child {
@@ -136,8 +136,14 @@
         .vazio {
             text-align: center;
             color: var(--text-muted);
-            padding: 16px;
+            padding: 12px;
             font-style: italic;
+        }
+
+        .divider {
+            margin: 20px 0;
+            border: 0;
+            border-top: 1px solid var(--border);
         }
     </style>
 </head>
@@ -148,21 +154,39 @@
             <p>Plataforma de Gestão e Inteligência Jurídica</p>
         </header>
 
-        <!-- Cartão de Inserção -->
+        <!-- SECÇÃO 1: TENENTES -->
         <div class="card">
-            <h3>Novo Registo</h3>
+            <h3>Novo Tenente</h3>
             <input type="text" id="nome-tenente" placeholder="Nome do tenente ou cliente...">
-            <button onclick="inserirRegisto()">Guardar Registo</button>
+            <button onclick="inserirTenente()">Guardar Tenente</button>
         </div>
 
-        <!-- Cartão de Listagem / Dashboard -->
         <div class="card">
             <h3>
-                <span>Registos na Base de Dados</span>
-                <span id="badge-total" class="status-badge">0 ativos</span>
+                <span>Tenentes Registados</span>
+                <span id="badge-total-tenentes" class="status-badge">0</span>
             </h3>
-            <div id="conteudo-lista">
-                <p class="vazio">A carregar dados...</p>
+            <div id="conteudo-lista-tenentes">
+                <p class="vazio">A carregar...</p>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- SECÇÃO 2: CASOS JURÍDICOS -->
+        <div class="card">
+            <h3>Novo Caso Jurídico</h3>
+            <input type="text" id="titulo-caso" placeholder="Título ou descrição do caso...">
+            <button onclick="inserirCaso()" style="background: #0f766e;">Guardar Caso</button>
+        </div>
+
+        <div class="card">
+            <h3>
+                <span>Casos Registados</span>
+                <span id="badge-total-casos" class="status-badge" style="background: #ccfbf1; color: #115e59;">0</span>
+            </h3>
+            <div id="conteudo-lista-casos">
+                <p class="vazio">A carregar...</p>
             </div>
         </div>
     </div>
@@ -171,14 +195,20 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       const SUPABASE_URL = 'https://vwqzrhybemvhqsbsbfjp.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cXpyaHliZW12aHFzYnNiZmpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MTI1NDksImV4cCI6MjEwOTE4ODU0OX0.j5YOVbXx9vxKfCmIe4XdmRv17BySZRTr_-0knafvs9o';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3cXpyaHliZW12aHFzYnNiZmpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEyMTcwNzYsImV4cCI6MjA1Njc5MzA3Nn0.vRzSL2K06WzX9V8c9p5Q1...'; // Mantenha a sua chave JWT legacy ativa
 
       const { createClient } = supabase;
       const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      async function carregarRegistos() {
-        const conteudoLista = document.getElementById('conteudo-lista');
-        const badgeTotal = document.getElementById('badge-total');
+      // --- CARREGAR DADOS ---
+      async function carregarTudo() {
+        await carregarTenentes();
+        await carregarCasos();
+      }
+
+      async function carregarTenentes() {
+        const listaEl = document.getElementById('conteudo-lista-tenentes');
+        const badgeEl = document.getElementById('badge-total-tenentes');
 
         const { data, error } = await _supabase
           .from('tenentes')
@@ -186,54 +216,85 @@
           .order('created_at', { ascending: false });
         
         if (error) {
-          conteudoLista.innerHTML = `<p class="vazio" style="color: red;">Erro ao carregar: ${error.message}</p>`;
+          listaEl.innerHTML = `<p class="vazio" style="color: red;">Erro: ${error.message}</p>`;
           return;
         }
 
-        badgeTotal.innerText = `${data.length} registos`;
+        badgeEl.innerText = data.length;
 
         if (data.length === 0) {
-          conteudoLista.innerHTML = `<p class="vazio">Nenhum registo encontrado.</p>`;
+          listaEl.innerHTML = `<p class="vazio">Nenhum registo.</p>`;
           return;
         }
 
         let html = '<ul class="lista-itens">';
         data.forEach(item => {
-          const dataFormatada = item.created_at ? new Date(item.created_at).toLocaleString('pt-PT') : 'Data não disponível';
-          html += `
-            <li class="item-registo">
-                <span class="item-nome">${item.name || 'Sem nome'}</span>
-                <span class="item-data">Adicionado a: ${dataFormatada}</span>
-            </li>
-          `;
+          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-PT') : '';
+          html += `<li class="item-registo"><span class="item-nome">${item.name || 'Sem nome'}</span><span class="item-data">${dataF}</span></li>`;
         });
         html += '</ul>';
-
-        conteudoLista.innerHTML = html;
+        listaEl.innerHTML = html;
       }
 
-      async function inserirRegisto() {
-        const nomeInput = document.getElementById('nome-tenente');
-        const valor = nomeInput.value.trim();
+      async function carregarCasos() {
+        const listaEl = document.getElementById('conteudo-lista-casos');
+        const badgeEl = document.getElementById('badge-total-casos');
 
-        if (!valor) {
-          alert('Por favor, preencha o campo com um nome.');
+        // Acedendo à tabela 'Case' com C maiúsculo
+        const { data, error } = await _supabase
+          .from('Case')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          listaEl.innerHTML = `<p class="vazio" style="color: red;">Erro: ${error.message}</p>`;
           return;
         }
 
-        const { error } = await _supabase
-          .from('tenentes')
-          .insert([{ name: valor }]);
+        badgeEl.innerText = data.length;
 
+        if (data.length === 0) {
+          listaEl.innerHTML = `<p class="vazio">Nenhum caso registado.</p>`;
+          return;
+        }
+
+        let html = '<ul class="lista-itens">';
+        data.forEach(item => {
+          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-PT') : '';
+          const titulo = item.title || item.name || 'Caso sem título';
+          html += `<li class="item-registo"><span class="item-nome">${titulo}</span><span class="item-data">${dataF}</span></li>`;
+        });
+        html += '</ul>';
+        listaEl.innerHTML = html;
+      }
+
+      // --- INSERIR DADOS ---
+      async function inserirTenente() {
+        const input = document.getElementById('nome-tenente');
+        const valor = input.value.trim();
+        if (!valor) return alert('Escreva o nome do tenente.');
+
+        const { error } = await _supabase.from('tenentes').insert([{ name: valor }]);
+        if (error) alert('Erro: ' + error.message);
+        else { input.value = ''; carregarTenentes(); }
+      }
+
+      async function inserirCaso() {
+        const input = document.getElementById('titulo-caso');
+        const valor = input.value.trim();
+        if (!valor) return alert('Escreva o título do caso.');
+
+        // Inserindo na tabela 'Case' com C maiúsculo
+        const { error } = await _supabase.from('Case').insert([{ title: valor }]);
         if (error) {
-          alert('Erro ao guardar: ' + error.message);
+          alert('Erro ao inserir caso: ' + error.message);
         } else {
-          nomeInput.value = '';
-          carregarRegistos();
+          input.value = '';
+          carregarCasos();
         }
       }
 
-      carregarRegistos();
+      carregarTudo();
     </script>
 </body>
 </html>

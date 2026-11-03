@@ -19,7 +19,7 @@ test("security migrations are ordered and storage depends on legal-data RLS", as
   assert.match(contents[3], /references auth\.users/);
 });
 
-test("private bucket and browser write restrictions are explicit", async () => {
+test("private bucket and fail-closed Storage integration are explicit", async () => {
   const sql = await read("../supabase/migrations/20261103000400_private_document_storage.sql");
   assert.match(sql, /'case-documents',[\s\S]*?false,[\s\S]*?26214400/);
   assert.match(sql, /alter table storage\.objects enable row level security/i);

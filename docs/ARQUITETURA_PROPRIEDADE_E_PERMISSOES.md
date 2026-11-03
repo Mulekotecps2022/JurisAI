@@ -1,6 +1,6 @@
 # Arquitetura de propriedade de processos e permissões
 
-**Estado:** proposta técnica documentada; não aplicada ao banco. Nenhuma migration, policy RLS, alteração de grants ou bucket foi criada nesta etapa.
+**Estado:** arquitetura documentada e migrations preparatórias versionadas na branch de desenvolvimento; nenhuma migration foi aplicada ao banco principal. A estrutura preparatória de `case_access` tem RLS próprio, mas as tabelas jurídicas existentes ainda não estão protegidas por uma política completa.
 
 ## 1. Objetivo e princípios
 
@@ -23,7 +23,7 @@ Princípios:
 - O login atual usa link por e-mail e `shouldCreateUser: false`, portanto contas devem ser provisionadas previamente.
 
 ### Processo e propriedade
-- Adicionar `owner_user_id uuid NOT NULL` em `public.case`, referenciando `auth.users(id)`.
+- Adicionar `owner_user_id uuid` em `public.case`, referenciando `auth.users(id)`. Na fase preparatória a coluna é nullable para não atribuir proprietário por suposição; deverá tornar-se NOT NULL somente na migração coordenada que validar e tratar todos os registros legados.
 - O proprietário é único e explícito. Não inferir propriedade a partir de `tenente_id`, e-mail, primeiro login ou ordem de criação.
 - A propriedade não será duplicada como papel `owner` em uma tabela de membros. Isso evita duas fontes de verdade.
 
@@ -99,7 +99,7 @@ Diagnóstico confirmado em 02/11/2026:
 Plano de migração:
 1. identificar a finalidade de `public.CASE` por histórico de origem, metadados e referências; não renomear, mesclar ou excluir nesta fase;
 2. confirmar qual conta existente em `auth.users` será o primeiro proprietário administrativo;
-3. criar estrutura aditiva e índices para propriedade/acesso/participantes;
+3. criar estrutura aditiva e índices para propriedade/acesso/participantes; (migration preparatória já versionada, ainda não aplicada)
 4. preservar o registro de `tenentes` e atribuir visibilidade somente depois de decisão explícita; não assumir que pertence ao primeiro usuário;
 5. tornar `case.owner_user_id` obrigatório antes de habilitar criação de processos;
 6. aplicar RLS e privilégios em migration versionada, com rollback documentado;
@@ -134,7 +134,7 @@ Uploads reais só serão habilitados quando: propriedade e compartilhamento esti
 
 **Status final:** arquitetura proposta e documentada. Banco, policies e Storage permanecem inalterados.
 
-## 9. Administrador inicial da plataforma
+## 10. Administrador inicial da plataforma
 
 A conta inicial indicada pelo responsável pelo projeto foi localizada em `auth.users`, com convite concluído, e-mail confirmado e primeiro acesso registrado. O endereço e o UUID não são reproduzidos nesta documentação para evitar expor identificadores pessoais.
 

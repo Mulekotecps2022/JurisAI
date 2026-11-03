@@ -145,23 +145,44 @@ export type Database = {
         Row: {
           case_id: string
           created_at: string
+          created_by_user_id: string | null
           file_name: string
           file_path: string | null
           id: string
+          mime_type: string | null
+          sha256: string | null
+          size_bytes: number | null
+          status: "quarantined" | "scanning" | "available" | "rejected" | "upload_failed"
+          storage_bucket: string | null
+          storage_path: string | null
         }
         Insert: {
           case_id: string
           created_at?: string
+          created_by_user_id?: string | null
           file_name: string
           file_path?: string | null
           id?: string
+          mime_type?: string | null
+          sha256?: string | null
+          size_bytes?: number | null
+          status?: "quarantined" | "scanning" | "available" | "rejected" | "upload_failed"
+          storage_bucket?: string | null
+          storage_path?: string | null
         }
         Update: {
-          case_id?: string | null
+          case_id?: string
           created_at?: string
+          created_by_user_id?: string | null
           file_name?: string
           file_path?: string | null
           id?: string
+          mime_type?: string | null
+          sha256?: string | null
+          size_bytes?: number | null
+          status?: "quarantined" | "scanning" | "available" | "rejected" | "upload_failed"
+          storage_bucket?: string | null
+          storage_path?: string | null
         }
         Relationships: [
           {

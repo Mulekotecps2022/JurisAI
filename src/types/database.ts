@@ -81,6 +81,48 @@ export type Database = {
           },
         ]
       }
+      case_participants: {
+        Row: {
+          case_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          role: "client" | "plaintiff" | "defendant" | "lawyer" | "responsible" | "partner" | "witness" | "expert" | "other"
+          tenente_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          role: "client" | "plaintiff" | "defendant" | "lawyer" | "responsible" | "partner" | "witness" | "expert" | "other"
+          tenente_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          role?: "client" | "plaintiff" | "defendant" | "lawyer" | "responsible" | "partner" | "witness" | "expert" | "other"
+          tenente_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_participants_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "case"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_participants_tenente_id_fkey"
+            columns: ["tenente_id"]
+            isOneToOne: false
+            referencedRelation: "tenentes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       CASE: {
         Row: {
           created_at: string
@@ -101,14 +143,14 @@ export type Database = {
       }
       document: {
         Row: {
-          case_id: string | null
+          case_id: string
           created_at: string
           file_name: string
           file_path: string | null
           id: string
         }
         Insert: {
-          case_id?: string | null
+          case_id: string
           created_at?: string
           file_name: string
           file_path?: string | null
@@ -135,14 +177,14 @@ export type Database = {
         Row: {
           content: string
           created_at: string
-          document_id: string | null
+          document_id: string
           id: string
           vector: string | null
         }
         Insert: {
           content: string
           created_at?: string
-          document_id?: string | null
+          document_id: string
           id?: string
           vector?: string | null
         }
@@ -166,16 +208,19 @@ export type Database = {
       tenentes: {
         Row: {
           created_at: string
+          created_by_user_id: string | null
           id: string
           name: string
         }
         Insert: {
           created_at?: string
+          created_by_user_id: string
           id?: string
           name: string
         }
         Update: {
           created_at?: string
+          created_by_user_id?: string
           id?: string
           name?: string
         }

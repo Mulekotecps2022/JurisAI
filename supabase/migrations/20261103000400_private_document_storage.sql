@@ -121,42 +121,11 @@ begin
 end;
 $$;
 
--- Only authenticated users with case access can request metadata or a signed
--- download URL, and only after a trusted scanner marks the object available.
-alter table storage.objects enable row level security;
-drop policy if exists case_documents_read_available
-  on storage.objects;
-create policy case_documents_read_available
-  on storage.objects
-  for select
-  to authenticated
-  using (
-    bucket_id = 'case-documents'
-    and exists (
-      select 1
-      from public.document as d
-      where d.storage_bucket = 'case-documents'
-        and d.storage_path = storage.objects.name
-        and d.status = 'available'
-        and (select public.can_access_case(d.case_id))
-    )
-  );
-
--- All writes use the trusted server-only secret after an explicit user
--- authorization check. No authenticated/anon INSERT, UPDATE or DELETE policy.
-drop policy if exists case_documents_no_client_insert
-  on storage.objects;
-drop policy if exists case_documents_no_client_update
-  on storage.objects;
-drop policy if exists case_documents_no_client_delete
-  on storage.objects;
-
-revoke all on table storage.objects from anon, authenticated;
-grant select on table storage.objects to authenticated;
-
--- Document metadata is also server-written. Client sessions can read rows
--- through the case-scoped RLS policy, but cannot forge status, hashes or paths.
-revoke all on table public.document from anon, authenticated;
-grant select on table public.document to authenticated;
+-- Supabase owns storage.objects; project migration role cannot alter its
+-- ownership-controlled policies or grants. The table already has RLS enabled
+-- by Supabase and no permissive client policies are created here. All object
+-- writes and signed URL issuance use the trusted server-only secret after
+-- checking public.document RLS and case access. Browser clients never receive
+-- a storage secret. This fail-closed posture is intentionally restrictive.
 
 commit;

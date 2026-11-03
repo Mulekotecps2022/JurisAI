@@ -65,3 +65,12 @@ A auditoria direta confirmou RLS desativado em `tenentes`, `case`, `document` e 
 Foi preparada a migration `20261103000300_legal_data_rls_cutover.sql`, ainda não aplicada, para proteger processos, cadastro de pessoas, participantes jurídicos, documentos e embeddings. O registro legado de `tenentes` permanece sem criador atribuído e, portanto, oculto. A tabela `CASE` permanece fechada até esclarecer sua finalidade.
 
 O Storage continua pendente de bucket privado e policies próprias. Testes estruturais e comportamentais em ambiente Supabase isolado são obrigatórios. Nenhuma alteração foi aplicada ao projeto principal.
+
+
+## Upload e download privados
+
+A migration preparatória `20261103000400_private_document_storage.sql` configura o bucket privado e remove escrita direta do navegador em metadados e objetos. O endpoint server-side verifica identidade e papel owner/editor antes de usar uma chave privilegiada mantida apenas no ambiente do servidor, revalidando o acesso depois da gravação.
+
+Todo objeto começa em quarentena. A policy de Storage permite leitura apenas para documentos com status `available` e usuário com acesso ao processo. O endpoint de download gera signed URL de 5 minutos, sem cache, somente após RLS permitir a leitura.
+
+Não há scanner antimalware integrado nesta etapa. Portanto, o sistema não libera arquivos automaticamente; a inspeção de assinatura é preliminar e insuficiente para declarar um arquivo seguro. A credencial privilegiada não pode ser configurada em variável `NEXT_PUBLIC_*`, commit, issue ou log.

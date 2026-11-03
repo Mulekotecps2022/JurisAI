@@ -13,31 +13,31 @@ test("security migrations are ordered and storage depends on legal-data RLS", as
   ];
   const contents = await Promise.all(files.map(read));
   assert.match(contents[0], /platform_role.*platform_admin/s);
-  assert.match(contents[1], /create table if not exists public\\.case_access/);
-  assert.match(contents[2], /alter table public\\.case enable row level security/);
-  assert.match(contents[2], /alter table public\\.embedding enable row level security/);
-  assert.match(contents[3], /references auth\\.users/);
+  assert.match(contents[1], /create table if not exists public\.case_access/);
+  assert.match(contents[2], /alter table public\.case enable row level security/);
+  assert.match(contents[2], /alter table public\.embedding enable row level security/);
+  assert.match(contents[3], /references auth\.users/);
 });
 
 test("private bucket and fail-closed Storage integration are explicit", async () => {
   const sql = await read("../supabase/migrations/20261103000400_private_document_storage.sql");
-  assert.match(sql, /'case-documents',[\\s\\S]*?false,[\\s\\S]*?26214400/);
+  assert.match(sql, /'case-documents',[\s\S]*?false,[\s\S]*?26214400/);
   assert.match(sql, /'quarantined',[\\s\\S]*?'available'/);
-  assert.match(sql, /Supabase owns storage\\.objects/i);
+  assert.match(sql, /Supabase owns storage\.objects/i);
   assert.match(sql, /no permissive client policies are created here/i);
-  assert.match(sql, /revoke all on table public\\.document from anon, authenticated/i);
-  assert.match(sql, /grant select on table public\\.document to authenticated/i);
-  assert.doesNotMatch(sql, /grant\\s+(insert|update|delete).*storage\\.objects/i);
+  assert.match(sql, /revoke all on table public\.document from anon, authenticated/i);
+  assert.match(sql, /grant select on table public\.document to authenticated/i);
+  assert.doesNotMatch(sql, /grant\s+(insert|update|delete).*storage\.objects/i);
 });
 
 test("upload route authenticates, authorizes editor/owner and quarantines", async () => {
   const route = await read("../src/app/api/documentos/upload/route.ts");
-  assert.match(route, /auth\\.getUser\\(\\)/);
+  assert.match(route, /auth\.getUser\(\)/);
   assert.match(route, /owner_user_id === userId/);
-  assert.match(route, /access\\?\\.role === "editor"/);
+  assert.match(route, /access\?\.role === "editor"/);
   assert.match(route, /DOCUMENT_MAX_BYTES/);
   assert.match(route, /hasAllowedDocumentSignature/);
-  assert.match(route, /createHash\\("sha256"\\)/);
+  assert.match(route, /createHash\("sha256"\)/);
   assert.match(route, /status: "quarantined"/);
   assert.match(route, /createSupabaseAdminClient/);
   assert.match(route, /Re-check after the privileged object write/);
@@ -45,8 +45,8 @@ test("upload route authenticates, authorizes editor/owner and quarantines", asyn
 
 test("download route fails closed unless scanner status is available", async () => {
   const route = await read("../src/app/api/documentos/[documentId]/download/route.ts");
-  assert.match(route, /auth\\.getUser\\(\\)/);
-  assert.match(route, /document\\.status !== "available"/);
+  assert.match(route, /auth\.getUser\(\)/);
+  assert.match(route, /document\.status !== "available"/);
   assert.match(route, /SIGNED_URL_SECONDS = 300/);
   assert.match(route, /createSignedUrl/);
   assert.match(route, /Cache-Control.*no-store/);

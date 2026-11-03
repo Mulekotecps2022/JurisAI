@@ -123,6 +123,7 @@ $$;
 
 -- Only authenticated users with case access can request metadata or a signed
 -- download URL, and only after a trusted scanner marks the object available.
+alter table storage.objects enable row level security;
 drop policy if exists case_documents_read_available
   on storage.objects;
 create policy case_documents_read_available

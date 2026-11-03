@@ -64,6 +64,11 @@ comment on column public.document.sha256 is
 comment on column public.document.storage_path is
   'Opaque object key; original filename is never used as a path component.';
 
+-- Browser clients may read authorized metadata through RLS, but all writes
+-- are performed by the trusted upload/scanning server workflow.
+revoke all on table public.document from anon, authenticated;
+grant select on table public.document to authenticated;
+
 -- The bucket is private. If an identically named bucket already exists with
 -- different security settings, abort instead of silently changing it.
 insert into storage.buckets (

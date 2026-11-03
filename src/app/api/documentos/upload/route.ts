@@ -72,7 +72,7 @@ export async function POST(request: Request) {
   if (
     !fileName ||
     fileName.length > 255 ||
-    /[\\/\\\\\\u0000-\\u001f\\u007f]/.test(fileName)
+    /[\/\\\x00-\x1F\x7F]/.test(fileName)
   ) {
     return jsonError("Nome de arquivo inválido.", 400);
   }

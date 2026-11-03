@@ -53,3 +53,10 @@ Depende das migrations anteriores de perfis e de `case_access`. Faz o seguinte:
 ## Não aplicado
 
 Nenhuma DDL, policy, alteração de grants, bucket ou dado foi aplicado ao projeto Supabase principal por esta etapa.
+
+
+## Validação automatizada em CI
+
+Foi acrescentado um job com PostgreSQL 17 + pgvector descartável. Ele cria um fixture mínimo de Auth/Storage, aplica as migrations 001–004 em ordem, executa as assertions SQL e testes multi-identidade para owner, editor, viewer, administrador de plataforma e usuário sem vínculo.
+
+O ambiente é destruído ao final do job e não contém dados reais. Isso valida sintaxe, grants, RLS e parte do comportamento PostgreSQL. Não substitui integração com os serviços reais Supabase Auth/Storage nem valida a operação de signed URLs na infraestrutura gerenciada.

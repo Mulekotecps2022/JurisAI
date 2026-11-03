@@ -33,3 +33,47 @@ jobs:
         run: npm run build
       - name: Cloudflare Workers build
         run: npm run build:cf
+
+  database-security:
+    runs-on: ubuntu-latest
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Prepare isolated Supabase-compatible schema
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/fixtures/supabase_compat_prelude.sql
+      - name: Apply security migrations to disposable PostgreSQL
+        run: |
+          for migration in supabase/migrations/20261103000*.sql; do
+            echo "Applying $migration"
+            psql -v ON_ERROR_STOP=1 -f "$migration"
+          done
+      - name: Run structural SQL security assertions
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/case_ownership_security.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/legal_data_rls_security.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/private_document_storage.sql
+      - name: Run multi-user RLS behavior tests
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_behavior.sql

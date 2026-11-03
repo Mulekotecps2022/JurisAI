@@ -20,6 +20,30 @@ function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
+async function canUploadToCase(
+  userClient: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  caseId: string,
+  userId: string
+) {
+  const { data: caseRecord, error: caseError } = await userClient
+    .from("case")
+    .select("id, owner_user_id")
+    .eq("id", caseId)
+    .maybeSingle();
+
+  if (caseError || !caseRecord) return false;
+  if (caseRecord.owner_user_id === userId) return true;
+
+  const { data: access, error: accessError } = await userClient
+    .from("case_access")
+    .select("role")
+    .eq("case_id", caseId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return !accessError && access?.role === "editor";
+}
+
 export async function POST(request: Request) {
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > DOCUMENT_MAX_BYTES + 256 * 1024) {
@@ -62,29 +86,8 @@ export async function POST(request: Request) {
     return jsonError("Autenticação necessária.", 401);
   }
 
-  const { data: caseRecord, error: caseError } = await userClient
-    .from("case")
-    .select("id, owner_user_id")
-    .eq("id", caseId)
-    .maybeSingle();
-
-  if (caseError || !caseRecord) {
-    return jsonError("Processo não encontrado ou sem acesso.", 404);
-  }
-
-  let canUpload = caseRecord.owner_user_id === user.id;
-  if (!canUpload) {
-    const { data: access } = await userClient
-      .from("case_access")
-      .select("role")
-      .eq("case_id", caseId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    canUpload = access?.role === "editor";
-  }
-
-  if (!canUpload) {
-    return jsonError("Somente o proprietário ou um editor pode anexar documentos.", 403);
+  if (!(await canUploadToCase(userClient, caseId, user.id))) {
+    return jsonError("Processo não encontrado ou você não tem permissão para anexar documentos.", 403);
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -136,6 +139,14 @@ export async function POST(request: Request) {
   if (uploadError) {
     await admin.from("document").update({ status: "upload_failed" }).eq("id", documentId);
     return jsonError("O registro foi criado, mas o armazenamento falhou. O item foi marcado para revisão.", 502);
+  }
+
+  // Re-check after the privileged object write to narrow the revocation race.
+  // If access was revoked during upload, delete the object and keep it blocked.
+  if (!(await canUploadToCase(userClient, caseId, user.id))) {
+    await admin.storage.from(BUCKET).remove([storagePath]);
+    await admin.from("document").update({ status: "rejected" }).eq("id", documentId);
+    return jsonError("O acesso ao processo foi revogado durante o envio. O arquivo foi bloqueado.", 403);
   }
 
   return NextResponse.json({

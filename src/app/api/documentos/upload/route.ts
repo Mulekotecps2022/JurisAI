@@ -45,6 +45,21 @@ async function canUploadToCase(
 }
 
 export async function POST(request: Request) {
+  const origin = request.headers.get("origin");
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite === "cross-site") {
+    return jsonError("Origem da solicitação não autorizada.", 403);
+  }
+  if (origin) {
+    try {
+      if (new URL(origin).origin !== new URL(request.url).origin) {
+        return jsonError("Origem da solicitação não autorizada.", 403);
+      }
+    } catch {
+      return jsonError("Cabeçalho de origem inválido.", 400);
+    }
+  }
+
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > DOCUMENT_MAX_BYTES + 256 * 1024) {
     return jsonError("O arquivo excede o limite de 25 MiB.", 413);

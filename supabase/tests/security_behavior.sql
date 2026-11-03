@@ -191,13 +191,13 @@ values (
 );
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', true);
 set local role authenticated;
-do $
+do $$
 begin
   if (select count(*) from storage.objects) <> 1 then
     raise exception 'Quarantined object was exposed to owner';
   end if;
 end;
-$;
+$$;
 reset role;
 
 -- Only the trusted server/scanner (represented by the database owner in this
@@ -208,13 +208,13 @@ where id = '30000000-0000-4000-8000-000000000002';
 
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000003', true);
 set local role authenticated;
-do $
+do $$
 begin
   if (select count(*) from storage.objects) <> 2 then
     raise exception 'Viewer cannot read scanner-released file';
   end if;
 end;
-$;
+$$;
 reset role;
 
 -- Owner revokes editor membership; subsequent requests must lose all access.
@@ -227,7 +227,7 @@ reset role;
 
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000002', true);
 set local role authenticated;
-do $
+do $$
 begin
   if (select count(*) from public."case") <> 0
      or (select count(*) from public.document) <> 0
@@ -236,7 +236,7 @@ begin
     raise exception 'Revoked editor retained access to legal content';
   end if;
 end;
-$;
+$$;
 reset role;
 
 -- Unrelated user cannot discover rows by knowing UUIDs.

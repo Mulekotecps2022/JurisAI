@@ -1,7 +1,13 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { DOCUMENT_MAX_BYTES, allowedDocumentMimeTypes, buildDocumentObjectPath } from "@/features/documents/file-policy";
+import {
+  DOCUMENT_MAX_BYTES,
+  documentExtensionMimeMap,
+  getDocumentExtension,
+  hasAllowedDocumentSignature,
+  buildDocumentObjectPath
+} from "@/features/documents/file-policy";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -9,53 +15,6 @@ export const runtime = "nodejs";
 
 const BUCKET = "case-documents";
 const caseIdSchema = z.string().uuid();
-
-const extensionMimeMap: Record<string, string> = {
-  pdf: "application/pdf",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  tif: "image/tiff",
-  tiff: "image/tiff",
-  doc: "application/msword",
-  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  xls: "application/vnd.ms-excel",
-  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  txt: "text/plain",
-  eml: "message/rfc822"
-};
-
-function hasValidSignature(bytes: Uint8Array, mime: string) {
-  const starts = (...signature: number[]) =>
-    signature.every((value, index) => bytes[index] === value);
-
-  switch (mime) {
-    case "application/pdf":
-      return new TextDecoder().decode(bytes.slice(0, 5)) === "%PDF-";
-    case "image/jpeg":
-      return starts(0xff, 0xd8, 0xff);
-    case "image/png":
-      return starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a);
-    case "image/tiff":
-      return starts(0x49, 0x49, 0x2a, 0x00) || starts(0x4d, 0x4d, 0x00, 0x2a);
-    case "application/msword":
-    case "application/vnd.ms-excel":
-      return starts(0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1);
-    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-    case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-      return starts(0x50, 0x4b, 0x03, 0x04);
-    case "text/plain":
-    case "message/rfc822":
-      try {
-        const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-        return !text.includes("\u0000");
-      } catch {
-        return false;
-      }
-    default:
-      return false;
-  }
-}
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -90,13 +49,9 @@ export async function POST(request: Request) {
     return jsonError("Nome de arquivo inválido.", 400);
   }
 
-  const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
-  const expectedMime = extensionMimeMap[extension];
-  if (
-    !expectedMime ||
-    file.type !== expectedMime ||
-    !allowedDocumentMimeTypes.includes(file.type as (typeof allowedDocumentMimeTypes)[number])
-  ) {
+  const extension = getDocumentExtension(fileName);
+  const expectedMime = documentExtensionMimeMap[extension];
+  if (!expectedMime || file.type !== expectedMime) {
     return jsonError("A extensão e o tipo MIME do arquivo não são permitidos ou não correspondem.", 415);
   }
 
@@ -133,7 +88,7 @@ export async function POST(request: Request) {
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (!hasValidSignature(bytes, file.type)) {
+  if (!hasAllowedDocumentSignature(bytes, file.type)) {
     return jsonError("O conteúdo não corresponde a um formato de arquivo aceito.", 415);
   }
 

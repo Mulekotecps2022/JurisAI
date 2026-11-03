@@ -22,6 +22,7 @@ test("security migrations are ordered and storage depends on legal-data RLS", as
 test("private bucket and browser write restrictions are explicit", async () => {
   const sql = await read("../supabase/migrations/20261103000400_private_document_storage.sql");
   assert.match(sql, /'case-documents',[\s\S]*?false,[\s\S]*?26214400/);
+  assert.match(sql, /alter table storage\.objects enable row level security/i);
   assert.match(sql, /status = 'available'/);
   assert.match(sql, /revoke all on table storage\.objects from anon, authenticated/i);
   assert.match(sql, /grant select on table storage\.objects to authenticated/i);
@@ -39,6 +40,7 @@ test("upload route authenticates, authorizes editor/owner and quarantines", asyn
   assert.match(route, /createHash\("sha256"\)/);
   assert.match(route, /status: "quarantined"/);
   assert.match(route, /createSupabaseAdminClient/);
+  assert.match(route, /Re-check after the privileged object write/);
 });
 
 test("download route fails closed unless scanner status is available", async () => {

@@ -26,7 +26,7 @@ test("private bucket and fail-closed Storage integration are explicit", async ()
   assert.match(sql, /Supabase owns storage\\.objects/i);
   assert.match(sql, /no permissive client policies are created here/i);
   assert.match(sql, /revoke all on table public\.document from anon, authenticated/i);
-  assert.match(sql, /grant select on table public\\.document to authenticated/i);
+  assert.match(sql, /grant select on table public\.document to authenticated/i);
   assert.doesNotMatch(sql, /grant\s+(insert|update|delete).*storage\.objects/i);
 });
 

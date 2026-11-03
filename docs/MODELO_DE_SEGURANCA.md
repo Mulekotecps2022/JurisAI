@@ -56,3 +56,12 @@ A tabela `CASE` em maiúsculas permanece fora do fluxo funcional até que sua fi
 5. Só depois aplicar o plano ao projeto principal, com backup e autorização apropriada.
 
 **Status:** desenho documentado; nenhuma alteração de banco foi executada nesta etapa.
+
+
+## Auditoria atualizada — 03/11/2026
+
+A auditoria direta confirmou RLS desativado em `tenentes`, `case`, `document` e `embedding`; `CASE` (maiúscula) está com RLS ligado e sem policies. As quatro tabelas sem RLS constituem um risco crítico de exposição via papéis cliente. A correção deve ser coordenada com policies e grants completos; não habilitar RLS isoladamente.
+
+Foi preparada a migration `20261103000300_legal_data_rls_cutover.sql`, ainda não aplicada, para proteger processos, cadastro de pessoas, participantes jurídicos, documentos e embeddings. O registro legado de `tenentes` permanece sem criador atribuído e, portanto, oculto. A tabela `CASE` permanece fechada até esclarecer sua finalidade.
+
+O Storage continua pendente de bucket privado e policies próprias. Testes estruturais e comportamentais em ambiente Supabase isolado são obrigatórios. Nenhuma alteração foi aplicada ao projeto principal.

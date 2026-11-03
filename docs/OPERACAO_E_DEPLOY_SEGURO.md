@@ -54,3 +54,13 @@ O fixture simula as tabelas Auth e Storage necessárias para validar o SQL e o R
 - Escolher e integrar scanner/antimalware confiável.
 - Executar smoke tests reais de Auth, Storage, signed URLs e revogação.
 - Só depois decidir cutover do banco principal e deploy.
+
+
+## Cloudflare e process.env
+
+O `wrangler.jsonc` usa compatibilidade Node.js e data de compatibilidade 2026-11-02. A documentação atual do Workers informa que, com `nodejs_compat` e compatibilidade adequada, secrets e variáveis de ambiente podem ser lidos por `process.env`; a população de `process.env` é habilitada por padrão para datas posteriores a 2025-04-01. A configuração real ainda precisa ser verificada em preview com a secret definida no ambiente.
+
+Referências oficiais:
+- https://developers.cloudflare.com/workers/configuration/environment-variables/
+- https://developers.cloudflare.com/workers/configuration/compatibility-flags/
+- https://opennext.js.org/cloudflare/bindings

@@ -70,7 +70,7 @@ values ('00000000-0000-4000-8000-000000000006', 'new-user@example.invalid');
 
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', true);
 set local role authenticated;
-do $
+do $$
 begin
   if (select count(*) from public.app_user_profiles) <> 1 then
     raise exception 'User can enumerate other profiles';
@@ -84,7 +84,7 @@ begin
     raise exception 'Browser role can mutate profile identity or platform role';
   end if;
 end;
-$;
+$$;
 update public.app_user_profiles
 set display_name = 'Owner test profile'
 where user_id = '00000000-0000-4000-8000-000000000001';
@@ -92,13 +92,13 @@ reset role;
 
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000006', true);
 set local role authenticated;
-do $
+do $$
 begin
   if (select platform_role from public.app_user_profiles) <> 'user' then
     raise exception 'New Auth user was not provisioned with user role';
   end if;
 end;
-$;
+$$;
 reset role;
 
 -- Owner: sees all linked records and can update the case.

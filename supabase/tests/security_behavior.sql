@@ -114,15 +114,13 @@ begin
   end if;
 end;
 $$;
-delete from public.document
-where id = '30000000-0000-4000-8000-000000000001';
-do $$
+do $
 begin
-  if (select count(*) from public.document) <> 1 then
-    raise exception 'Editor unexpectedly deleted owner document';
+  if has_table_privilege('authenticated', 'public.document', 'DELETE') then
+    raise exception 'Browser role unexpectedly has DELETE privilege on document';
   end if;
 end;
-$$;
+$;
 reset role;
 
 -- Viewer: read-only access to the shared case, its document, embedding and file.

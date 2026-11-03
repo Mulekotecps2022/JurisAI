@@ -134,6 +134,20 @@ Uploads reais só serão habilitados quando: propriedade e compartilhamento esti
 
 **Status final:** arquitetura proposta e documentada. Banco, policies e Storage permanecem inalterados.
 
+## 11. Cutover RLS dos dados jurídicos
+
+A auditoria direta do projeto em 03/11/2026 confirmou RLS desativado em `tenentes`, `case`, `document` e `embedding`, e RLS habilitado sem policies em `CASE` (maiúscula). Esse alerta é crítico: não há isolamento por linha nas quatro tabelas expostas. Não habilitar RLS isoladamente, pois sem policies isso bloquearia operações.
+
+Foi preparada, mas não aplicada, a migration `supabase/migrations/20261103000300_legal_data_rls_cutover.sql`, com testes em `supabase/tests/legal_data_rls_security.sql`. Ela:
+- habilita RLS e políticas por operação em processos, pessoas, participantes, documentos e embeddings;
+- separa participantes jurídicos de colaboradores técnicos;
+- restringe embeddings a leitura autenticada autorizada, reservando escrita ao servidor;
+- impede alterar proprietário do processo e mover documentos entre processos pelo cliente;
+- mantém o registro legado de pessoa sem criador atribuído oculto;
+- mantém a tabela `CASE` sem acesso ao cliente até esclarecer sua finalidade.
+
+**Limite:** o Storage ainda exige bucket privado e policies próprias. A migration também depende das duas migrations anteriores de perfil e acesso. A execução de testes estruturais e comportamentais em ambiente Supabase isolado é obrigatória antes de qualquer cutover de produção.
+
 ## 10. Administrador inicial da plataforma
 
 A conta inicial indicada pelo responsável pelo projeto foi localizada em `auth.users`, com convite concluído, e-mail confirmado e primeiro acesso registrado. O endereço e o UUID não são reproduzidos nesta documentação para evitar expor identificadores pessoais.

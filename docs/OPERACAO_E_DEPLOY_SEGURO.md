@@ -68,3 +68,8 @@ Referências oficiais:
 - https://developers.cloudflare.com/workers/configuration/environment-variables/
 - https://developers.cloudflare.com/workers/configuration/compatibility-flags/
 - https://opennext.js.org/cloudflare/bindings
+
+
+## Auditoria de dependências — 03/11/2026
+
+O workflow executou `npm audit --omit=dev --audit-level=high` e `npm audit --audit-level=high`: ambos retornaram **zero vulnerabilidades** após atualizar PostCSS e aplicar overrides corrigidos de glob/minimatch. Lint, TypeScript, testes de contrato, build Next.js e build Cloudflare também passaram no run #114.

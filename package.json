@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "build:cf": "opennextjs-cloudflare build",
     "preview:cf": "opennextjs-cloudflare build && wrangler dev",
-    "deploy:cf": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+    "deploy:cf": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "test:security": "node --test tests/security-contract.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

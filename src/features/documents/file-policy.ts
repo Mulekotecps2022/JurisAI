@@ -90,7 +90,7 @@ export function hasAllowedDocumentSignature(bytes: Uint8Array, mime: string) {
       try {
         return !new TextDecoder("utf-8", { fatal: true })
           .decode(bytes)
-          .includes("\\u0000");
+          .includes("\u0000");
       } catch {
         return false;
       }

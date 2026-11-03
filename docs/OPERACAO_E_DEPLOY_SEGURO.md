@@ -18,6 +18,10 @@ Segredo de servidor:
 
 O segredo de servidor deve ser configurado pelo painel de secrets do ambiente Cloudflare, ou por `wrangler secret put SUPABASE_SECRET_KEY` após autenticação no Wrangler. Nunca colocar o valor em `.env.example` preenchido, código, GitHub, issue, chat, logs ou variáveis `NEXT_PUBLIC_*`.
 
+## Provisionamento do administrador
+
+O procedimento de promoção da conta inicial está documentado em `docs/BOOTSTRAP_ADMIN_INICIAL.md`. Ele usa apenas um marcador de e-mail, sem gravar o identificador pessoal no Git. O bootstrap é executado manualmente no SQL Editor após a migration de perfis, em ambiente isolado.
+
 ## Ordem de liberação
 
 1. Aplicar e validar migrations 001–004 em ambiente Supabase isolado.

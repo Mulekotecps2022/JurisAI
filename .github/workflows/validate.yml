@@ -24,6 +24,8 @@ jobs:
         run: npm run lint
       - name: Type check
         run: npm run typecheck
+      - name: Security contract tests
+        run: npm run test:security
       - name: Production build
         run: npm run build
       - name: Cloudflare Workers build

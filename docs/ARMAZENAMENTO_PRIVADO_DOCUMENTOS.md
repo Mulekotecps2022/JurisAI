@@ -61,3 +61,20 @@ Não criar policy permissiva baseada apenas em `auth.uid() is not null`, nome de
 ## Estado desta entrega
 
 O código contém validação preliminar de metadados e geração de caminhos opacos em `src/features/documents/file-policy.ts`. Isso não realiza upload e não substitui validação do conteúdo no servidor. Nenhuma alteração foi aplicada ao banco Supabase.
+
+
+## Implementação do upload e quarentena — 03/11/2026
+
+Foram preparados:
+- migration `20261103000400_private_document_storage.sql`, com bucket privado `case-documents`, limite de 25 MiB e allowlist MIME;
+- rota `POST /api/documentos/upload`, que exige sessão válida e verifica owner/editor antes de usar a chave privilegiada do servidor;
+- cliente Supabase administrativo exclusivamente server-side em `src/lib/supabase/admin.ts`;
+- validação preliminar de assinatura, extensão/MIME e SHA-256;
+- rota `GET /api/documentos/[documentId]/download`, que só emite redirecionamento para signed URL de 5 minutos quando status está `available` e RLS autoriza o usuário;
+- estados de quarentena e testes estruturais.
+
+**Atenção:** ainda não existe scanner/antimalware. Todo arquivo fica em `quarantined`, sem download e sem URL assinada. A checagem de magic bytes é preliminar e não prova segurança; DOCX/XLSX exigem inspeção estrutural de ZIP/OOXML. Não liberar documentos até integrar um scanner confiável.
+
+A migration retira gravação de metadados e Storage dos papéis cliente. A rota usa `SUPABASE_SECRET_KEY` (ou a variável legada `SUPABASE_SERVICE_ROLE_KEY`) somente no servidor, depois de autenticar e autorizar o usuário. Essa secret precisa ser configurada manualmente no ambiente de execução seguro; nunca deve ir para GitHub ou variável `NEXT_PUBLIC_*`.
+
+**Não implantado:** nenhuma migration, bucket, secret, upload real ou deploy foi executado.

@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          owner_user_id: string | null
           tenente_id: string | null
           title: string
         }
@@ -26,6 +27,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          owner_user_id?: string | null
           tenente_id?: string | null
           title: string
         }
@@ -33,6 +35,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          owner_user_id?: string | null
           tenente_id?: string | null
           title?: string
         }
@@ -42,6 +45,38 @@ export type Database = {
             columns: ["tenente_id"]
             isOneToOne: false
             referencedRelation: "tenentes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_access: {
+        Row: {
+          case_id: string
+          created_at: string
+          granted_by: string
+          role: "editor" | "viewer"
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          created_at?: string
+          granted_by: string
+          role: "editor" | "viewer"
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          created_at?: string
+          granted_by?: string
+          role?: "editor" | "viewer"
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_access_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "case"
             referencedColumns: ["id"]
           },
         ]

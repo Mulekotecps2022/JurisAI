@@ -124,8 +124,8 @@ begin
   if (select count(*) from public.tenentes where id = '10000000-0000-4000-8000-000000000001') <> 0 then
     raise exception 'Legacy unassigned entity leaked to owner';
   end if;
-  if (select count(*) from storage.objects) <> 1 then
-    raise exception 'Owner cannot read available private object';
+  if (select count(*) from storage.objects) <> 0 then
+    raise exception 'Browser role unexpectedly accessed Storage object directly';
   end if;
 end;
 $$;
@@ -147,8 +147,8 @@ begin
   if (select count(*) from public.case_access where user_id = '00000000-0000-4000-8000-000000000003') <> 0 then
     raise exception 'Editor can enumerate another collaborator';
   end if;
-  if (select count(*) from storage.objects) <> 1 then
-    raise exception 'Editor cannot read available private object';
+  if (select count(*) from storage.objects) <> 0 then
+    raise exception 'Editor unexpectedly accessed Storage object directly';
   end if;
 end;
 $$;
@@ -169,8 +169,8 @@ begin
   if (select count(*) from public."case") <> 1
      or (select count(*) from public.document) <> 1
      or (select count(*) from public.embedding) <> 1
-     or (select count(*) from storage.objects) <> 1 then
-    raise exception 'Viewer cannot read authorized case content';
+     or (select count(*) from storage.objects) <> 0 then
+    raise exception 'Viewer cannot read authorized metadata or unexpectedly accessed Storage directly';
   end if;
 end;
 $$;
@@ -231,8 +231,8 @@ select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001
 set local role authenticated;
 do $$
 begin
-  if (select count(*) from storage.objects) <> 1 then
-    raise exception 'Quarantined object was exposed to owner';
+  if (select count(*) from storage.objects) <> 0 then
+    raise exception 'Browser role unexpectedly accessed quarantined Storage object directly';
   end if;
 end;
 $$;
@@ -248,8 +248,8 @@ select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000003
 set local role authenticated;
 do $$
 begin
-  if (select count(*) from storage.objects) <> 2 then
-    raise exception 'Viewer cannot read scanner-released file';
+  if (select count(*) from storage.objects) <> 0 then
+    raise exception 'Browser role unexpectedly accessed released Storage object directly';
   end if;
 end;
 $$;
@@ -271,7 +271,7 @@ begin
      or (select count(*) from public.document) <> 0
      or (select count(*) from public.embedding) <> 0
      or (select count(*) from storage.objects) <> 0 then
-    raise exception 'Revoked editor retained access to legal content';
+    raise exception 'Revoked editor retained metadata access or direct Storage access';
   end if;
 end;
 $$;
@@ -286,7 +286,7 @@ begin
      or (select count(*) from public.document) <> 0
      or (select count(*) from public.embedding) <> 0
      or (select count(*) from storage.objects) <> 0 then
-    raise exception 'Unrelated user discovered private case data';
+    raise exception 'Unrelated user discovered private metadata or direct Storage access';
   end if;
 end;
 $$;

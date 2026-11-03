@@ -20,15 +20,20 @@ declare
   target_user_id uuid;
   matched_users integer;
 begin
-  select count(*), min(id)
-    into matched_users, target_user_id
+  select count(*)
+    into matched_users
   from auth.users
   where lower(email) = lower('REPLACE_WITH_CONFIRMED_ADMIN_EMAIL')
     and email_confirmed_at is not null;
 
-  if matched_users <> 1 or target_user_id is null then
+  if matched_users <> 1 then
     raise exception 'Expected exactly one confirmed Auth identity; found %', matched_users;
   end if;
+
+  select id into target_user_id
+  from auth.users
+  where lower(email) = lower('REPLACE_WITH_CONFIRMED_ADMIN_EMAIL')
+    and email_confirmed_at is not null;
 
   update public.app_user_profiles
   set platform_role = 'platform_admin'

@@ -162,3 +162,14 @@ A indicação da conta como **administrador inicial da plataforma** é uma decis
 - executar operações privilegiadas de provisionamento exclusivamente no servidor, com credencial administrativa fora do navegador.
 
 **Estado atual:** identidade autenticada e confirmada; conta indicada para o primeiro papel administrativo. O papel ainda não foi gravado em tabela de aplicação, nenhuma migration foi aplicada e nenhuma permissão de dados jurídicos foi ampliada.
+
+
+## 12. Storage privado e upload em quarentena
+
+Foi preparada a migration `20261103000400_private_document_storage.sql`, dependente das migrations 001–003. Ela cria/valida bucket privado `case-documents` (25 MiB, allowlist MIME), acrescenta metadados e estado de quarentena, restringe gravações ao servidor e só permite leitura do objeto quando o documento está `available` e o usuário tem acesso ao processo.
+
+A rota `POST /api/documentos/upload` autentica o usuário, confirma proprietário/editor, valida tamanho, extensão, MIME e assinatura preliminar, calcula SHA-256 e grava via credencial privilegiada exclusivamente server-side. A rota de download cria URL assinada de 5 minutos somente para documento liberado e autorizado.
+
+**Bloqueio deliberado:** ainda não há antimalware/scanner integrado. Portanto, todo arquivo permanece em `quarantined`; não há download ou URL assinada. A checagem de magic bytes não é certificação de segurança, especialmente para DOCX/XLSX. O endpoint falha fechado se a secret de servidor não estiver configurada.
+
+A migration, endpoint, testes e documentação estão apenas na branch de desenvolvimento. Nenhuma alteração foi aplicada ao Supabase principal e nenhum deploy foi realizado.

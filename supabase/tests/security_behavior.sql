@@ -114,13 +114,13 @@ begin
   end if;
 end;
 $$;
-do $
+do $$
 begin
   if has_table_privilege('authenticated', 'public.document', 'DELETE') then
     raise exception 'Browser role unexpectedly has DELETE privilege on document';
   end if;
 end;
-$;
+$$;
 reset role;
 
 -- Viewer: read-only access to the shared case, its document, embedding and file.

@@ -165,6 +165,80 @@ end;
 $$;
 reset role;
 
+-- Quarantined files remain invisible in Storage even to the case owner.
+reset role;
+insert into public.document (
+  id, case_id, file_name, created_by_user_id, mime_type, size_bytes,
+  sha256, storage_bucket, storage_path, status
+)
+values (
+  '30000000-0000-4000-8000-000000000002',
+  '20000000-0000-4000-8000-000000000001',
+  'quarantined.pdf',
+  '00000000-0000-4000-8000-000000000001',
+  'application/pdf',
+  128,
+  repeat('b', 64),
+  'case-documents',
+  '20000000-0000-4000-8000-000000000001/30000000-0000-4000-8000-000000000002/original.pdf',
+  'quarantined'
+);
+insert into storage.objects (bucket_id, name, metadata)
+values (
+  'case-documents',
+  '20000000-0000-4000-8000-000000000001/30000000-0000-4000-8000-000000000002/original.pdf',
+  '{"mimetype":"application/pdf","size":128}'::jsonb
+);
+select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', true);
+set local role authenticated;
+do $
+begin
+  if (select count(*) from storage.objects) <> 1 then
+    raise exception 'Quarantined object was exposed to owner';
+  end if;
+end;
+$;
+reset role;
+
+-- Only the trusted server/scanner (represented by the database owner in this
+-- fixture) may release a file after inspection.
+update public.document
+set status = 'available'
+where id = '30000000-0000-4000-8000-000000000002';
+
+select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000003', true);
+set local role authenticated;
+do $
+begin
+  if (select count(*) from storage.objects) <> 2 then
+    raise exception 'Viewer cannot read scanner-released file';
+  end if;
+end;
+$;
+reset role;
+
+-- Owner revokes editor membership; subsequent requests must lose all access.
+select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000001', true);
+set local role authenticated;
+delete from public.case_access
+where case_id = '20000000-0000-4000-8000-000000000001'
+  and user_id = '00000000-0000-4000-8000-000000000002';
+reset role;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000002', true);
+set local role authenticated;
+do $
+begin
+  if (select count(*) from public."case") <> 0
+     or (select count(*) from public.document) <> 0
+     or (select count(*) from public.embedding) <> 0
+     or (select count(*) from storage.objects) <> 0 then
+    raise exception 'Revoked editor retained access to legal content';
+  end if;
+end;
+$;
+reset role;
+
 -- Unrelated user cannot discover rows by knowing UUIDs.
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000000005', true);
 set local role authenticated;

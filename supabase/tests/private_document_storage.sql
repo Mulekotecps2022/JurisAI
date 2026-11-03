@@ -43,7 +43,8 @@ begin
     select 1 from pg_policies
     where schemaname = 'storage'
       and tablename = 'objects'
-      and (roles @> array['anon']::name[]
+      and (roles @> array['public']::name[]
+        or roles @> array['anon']::name[]
         or roles @> array['authenticated']::name[])
   ) then
     raise exception 'Browser Storage policies must remain absent until reviewed';

@@ -45,6 +45,26 @@ revoke all on function public.is_platform_admin() from public;
 revoke all on function public.is_platform_admin() from anon;
 grant execute on function public.is_platform_admin() to authenticated;
 
+create or replace function public.set_app_user_profile_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $function$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$function$;
+
+revoke all on function public.set_app_user_profile_updated_at() from public;
+revoke all on function public.set_app_user_profile_updated_at() from anon, authenticated;
+
+drop trigger if exists set_app_user_profiles_updated_at
+  on public.app_user_profiles;
+create trigger set_app_user_profiles_updated_at
+  before update on public.app_user_profiles
+  for each row execute function public.set_app_user_profile_updated_at();
+
 create or replace function public.handle_new_auth_user_profile()
 returns trigger
 language plpgsql

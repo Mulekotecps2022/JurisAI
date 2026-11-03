@@ -35,12 +35,18 @@ begin
     raise exception 'case-documents MIME allowlist is incorrect';
   end if;
 
-  if has_table_privilege('anon','storage.objects','SELECT')
-     or has_table_privilege('anon','storage.objects','INSERT')
-     or has_table_privilege('authenticated','storage.objects','INSERT')
-     or has_table_privilege('authenticated','storage.objects','UPDATE')
-     or has_table_privilege('authenticated','storage.objects','DELETE') then
-    raise exception 'browser roles have unexpected Storage privileges';
+  -- Supabase owns Storage grants and policies. Table-level grants alone do
+  -- not authorize access while RLS is enabled and no client policy matches.
+  -- Keep this bucket fail-closed until an explicitly reviewed read policy is
+  -- introduced; server-side secret access is handled outside browser roles.
+  if exists (
+    select 1 from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and (roles @> array['anon']::name[]
+        or roles @> array['authenticated']::name[])
+  ) then
+    raise exception 'Browser Storage policies must remain absent until reviewed';
   end if;
 
   if has_table_privilege('authenticated','public.document','INSERT')
@@ -49,15 +55,7 @@ begin
     raise exception 'browser role can mutate document metadata';
   end if;
 
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'storage'
-      and tablename = 'objects'
-      and policyname = 'case_documents_read_available'
-      and cmd = 'SELECT'
-  ) then
-    raise exception 'Missing authorized available-document read policy';
-  end if;
+
 end;
 $$;
 

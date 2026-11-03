@@ -33,7 +33,7 @@ test("private bucket and browser write restrictions are explicit", async () => {
 test("upload route authenticates, authorizes editor/owner and quarantines", async () => {
   const route = await read("../src/app/api/documentos/upload/route.ts");
   assert.match(route, /auth\.getUser\(\)/);
-  assert.match(route, /owner_user_id === user\.id/);
+  assert.match(route, /owner_user_id === userId/);
   assert.match(route, /access\?\.role === "editor"/);
   assert.match(route, /DOCUMENT_MAX_BYTES/);
   assert.match(route, /hasAllowedDocumentSignature/);

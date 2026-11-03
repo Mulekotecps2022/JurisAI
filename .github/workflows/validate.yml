@@ -74,6 +74,7 @@ jobs:
           done
       - name: Run structural SQL security assertions
         run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/app_user_profiles_security.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/case_ownership_security.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/legal_data_rls_security.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/private_document_storage.sql

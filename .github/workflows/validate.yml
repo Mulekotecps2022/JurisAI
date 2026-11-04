@@ -68,7 +68,7 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/fixtures/supabase_compat_prelude.sql
       - name: Apply security migrations to disposable PostgreSQL
         run: |
-          for migration in supabase/migrations/20261103000*.sql; do
+          for migration in supabase/migrations/*.sql; do
             echo "Applying $migration"
             psql -v ON_ERROR_STOP=1 -f "$migration"
           done
@@ -78,5 +78,6 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/tests/case_ownership_security.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/legal_data_rls_security.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/private_document_storage.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/fk_supporting_indexes.sql
       - name: Run multi-user RLS behavior tests
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_behavior.sql

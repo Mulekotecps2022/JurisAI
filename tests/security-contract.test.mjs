@@ -39,6 +39,7 @@ test("upload route authenticates, authorizes editor/owner and quarantines", asyn
   assert.match(route, /hasAllowedDocumentSignature/);
   assert.match(route, /createHash\("sha256"\)/);
   assert.match(route, /status: "quarantined"/);
+  assert.match(route, /JURISAI_ENABLE_UPLOADS !== "true"/);
   assert.match(route, /createSupabaseAdminClient/);
   assert.match(route, /Re-check after the privileged object write/);
 });

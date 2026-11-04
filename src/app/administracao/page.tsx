@@ -45,7 +45,7 @@ export default async function AdministrationPage() {
     { title: "Processos e pessoas", status: "Protegidos por RLS", detail: "A visibilidade depende do vínculo e das permissões de cada registro." },
     { title: "Biblioteca documental", status: "Acesso controlado", detail: "O bucket é privado; documentos em quarentena não podem ser baixados." },
     { title: "Envio de arquivos", status: "Suspenso preventivamente", detail: "Será liberado somente após scanner antimalware e inspeção estrutural confiáveis." },
-    { title: "Validação de login hospedado", status: "Pendente", detail: "Aguardando janela de envio de e-mail para concluir o teste de sessão no navegador." }
+    { title: "Sessão autenticada no ambiente hospedado", status: auth.user ? "Validada nesta requisição pelo servidor" : "Não confirmada", detail: "O servidor confirmou a identidade com supabase.auth.getUser() para carregar esta área protegida. Isso comprova uma sessão válida neste acesso; não é um histórico de entregabilidade do e-mail." }
   ];
 
   return (
@@ -69,7 +69,7 @@ export default async function AdministrationPage() {
 
         <section className="mt-8">
           <h2 className="text-lg font-bold text-slate-900">Controles e situação dos módulos</h2>
-          <p className="mt-1 text-sm text-slate-600">Status técnicos conhecidos; a validação visual do login hospedado continua pendente.</p>
+          <p className="mt-1 text-sm text-slate-600">Status técnicos consultados durante o carregamento desta página.</p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {checks.map((check) => (
               <article key={check.title} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

@@ -1,6 +1,6 @@
 # Armazenamento privado de documentos — JurisAI
 
-**Estado atualizado em 04/11/2026:** migrations 001–004 aplicadas no projeto Supabase de desenvolvimento `JurisAI-Desenvolvimento` (`qvmkafixxfahabcgtlgz`). O bucket `case-documents` existe e está privado. O projeto de produção não foi alterado.
+**Estado atualizado em 04/11/2026:** migrations de segurança e Storage aplicadas no projeto Supabase de desenvolvimento `JurisAI-Desenvolvimento` (`qvmkafixxfahabcgtlgz`). O bucket `case-documents` existe e está privado. Produção permanece inalterada.
 
 ## Diagnóstico histórico — 02/11/2026
 
@@ -54,7 +54,7 @@ A assinatura de magic bytes e o MIME são verificações preliminares, não cert
 
 O cliente administrativo importa `server-only` e aceita `SUPABASE_SECRET_KEY` (ou a variável legada `SUPABASE_SERVICE_ROLE_KEY`) apenas no servidor. Essa secret nunca pode ir ao navegador, a `NEXT_PUBLIC_*` ou a arquivos versionados.
 
-A configuração e o deploy no Cloudflare ainda precisam ser validados. A tela `/documentos` continua demonstrativa, com dados fictícios em memória; não confundir a tela com integração de upload real.
+A configuração e o deploy no Cloudflare ainda precisam ser validados. A página `/documentos` continua demonstrativa, com dados fictícios em memória; não confundir a tela com integração de upload real.
 
 ## Testes pendentes
 

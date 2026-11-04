@@ -1,15 +1,19 @@
 # Bootstrap do administrador inicial — JurisAI
 
-Este documento complementa `BOOTSTRAP_ADMIN_INICIAL.md`. O projeto ativo de desenvolvimento está sem usuários Auth (zero contas e zero perfis no momento da auditoria de 04/11/2026), portanto não existe identidade administrativa a promover ainda.
+**Estado em 04/11/2026: concluído no projeto JurisAI-Desenvolvimento.**
 
-## Procedimento correto
+A identidade inicial aceitou o convite pelo Supabase Auth. O e-mail foi confirmado, o trigger criou o perfil padrão e a promoção controlada para `platform_admin` foi executada no ambiente de desenvolvimento. Uma consulta posterior confirmou o papel persistido.
 
-1. Confirmar o endereço da conta inicial com o responsável pelo projeto.
-2. Criar/convidar a identidade usando Supabase Auth (Dashboard ou API Admin server-side confiável). Não inserir registros manualmente em `auth.users`.
-3. Confirmar o e-mail.
-4. Verificar que o trigger criou um perfil com papel padrão `user`.
-5. Executar o procedimento de promoção para `platform_admin` descrito em `BOOTSTRAP_ADMIN_INICIAL.md`, somente no projeto de desenvolvimento.
-6. Verificar que a conta não recebe acesso automático aos processos, documentos ou embeddings.
+## Verificações realizadas
+
+- Identidade existe em `auth.users` e está confirmada.
+- Perfil correspondente existe em `public.app_user_profiles`.
+- `platform_role = 'platform_admin'`.
+- Sob contexto SQL `authenticated` com o JWT subject da identidade, `public.is_platform_admin()` retornou `true`.
+- A identidade visualiza somente o próprio perfil.
+- A identidade administrativa não recebeu acesso implícito a processos, documentos ou embeddings (nenhuma linha visível sem vínculo).
+- `anon` não possui SELECT em perfis, processos ou documentos.
+- O cliente autenticado não pode alterar `platform_role`, inserir/apagar perfis, apagar processos ou gravar embeddings.
 
 ## Segurança
 
@@ -17,6 +21,10 @@ Este documento complementa `BOOTSTRAP_ADMIN_INICIAL.md`. O projeto ativo de dese
 - O cliente não pode alterar `platform_role` nem promover outra conta.
 - A chave `service_role`/secret nunca pode ser usada no navegador ou commitada.
 - O registro legado de `tenentes` e a tabela `CASE` maiúscula permanecem intocados.
-- Não executar promoção em produção.
+- A promoção ocorreu somente em desenvolvimento; produção não foi alterada.
 
-**Estado:** aguardando identidade inicial confirmada no projeto `JurisAI-Desenvolvimento`.
+## Limitação remanescente
+
+A validação SQL comprova o perfil e os privilégios no banco, mas não substitui o teste manual de login pela interface hospedada nem o teste de sessão/cookies no navegador. Esse teste deverá ocorrer após a configuração/validação do ambiente de aplicação.
+
+Não registrar neste documento o e-mail, UUID, senha ou qualquer token da conta.

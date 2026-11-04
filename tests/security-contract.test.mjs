@@ -74,6 +74,30 @@ test("login preserves only a same-site relative destination", async () => {
   assert.match(callback, /candidateUrl\.origin === request\.nextUrl\.origin/);
 });
 
+
+test("people and case APIs use authenticated Supabase clients and RLS", async () => {
+  const peopleApi = await read("../src/app/api/pessoas/route.ts");
+  const casesApi = await read("../src/app/api/processos/route.ts");
+  assert.match(peopleApi, /auth\.getUser\(\)/);
+  assert.match(peopleApi, /from\("tenentes"\)/);
+  assert.match(peopleApi, /personInputSchema\.safeParse/);
+  assert.match(peopleApi, /created_by_user_id: user\.id/);
+  assert.doesNotMatch(peopleApi, /createSupabaseAdminClient/);
+  assert.match(casesApi, /auth\.getUser\(\)/);
+  assert.match(casesApi, /from\("case"\)/);
+  assert.match(casesApi, /owner_user_id: user\.id/);
+  assert.match(casesApi, /from\("case_participants"\)/);
+  assert.doesNotMatch(casesApi, /createSupabaseAdminClient/);
+});
+
+test("workspace loads real records from authenticated API routes", async () => {
+  const workspace = await read("../src/features/workspace/workspace.tsx");
+  assert.match(workspace, /fetch\("\/api\/pessoas"\)/);
+  assert.match(workspace, /fetch\("\/api\/processos"\)/);
+  assert.match(workspace, /Cadastro salvo no ambiente seguro/);
+  assert.doesNotMatch(workspace, /peopleSeed|casesSeed|Demonstração local/);
+});
+
 test("admin Supabase key is server-only and not exposed as NEXT_PUBLIC", async () => {
   const admin = await read("../src/lib/supabase/admin.ts");
   const envExample = await read("../.env.example");

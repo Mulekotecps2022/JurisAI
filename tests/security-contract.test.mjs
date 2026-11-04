@@ -56,6 +56,24 @@ test("download uses RLS for user authorization and server-only admin signing", a
   assert.doesNotMatch(route, /userClient\.storage[\s\S]*?createSignedUrl/);
 });
 
+test("private routes require a valid Auth session and fail closed without configuration", async () => {
+  const middleware = await read("../src/lib/supabase/middleware.ts");
+  assert.match(middleware, /pathname === "\/gestao"/);
+  assert.match(middleware, /pathname === "\/documentos"/);
+  assert.match(middleware, /supabase\.auth\.getClaims\(\)/);
+  assert.match(middleware, /protectedPath && \(error \|\| !data\?\.claims\)/);
+  assert.match(middleware, /if \(protectedPath\)[\s\S]*?redirectToLogin/);
+});
+
+test("login preserves only a same-site relative destination", async () => {
+  const login = await read("../src/app/login/page.tsx");
+  const callback = await read("../src/app/auth/confirm/route.ts");
+  assert.match(login, /requestedNext\?\.startsWith\("\/"\)/);
+  assert.match(login, /!requestedNext\.startsWith\("\/\/"\)/);
+  assert.match(login, /shouldCreateUser: false/);
+  assert.match(callback, /candidateUrl\.origin === request\.nextUrl\.origin/);
+});
+
 test("admin Supabase key is server-only and not exposed as NEXT_PUBLIC", async () => {
   const admin = await read("../src/lib/supabase/admin.ts");
   const envExample = await read("../.env.example");

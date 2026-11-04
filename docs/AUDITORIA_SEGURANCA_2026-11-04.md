@@ -6,7 +6,7 @@
 
 - Repositório: `Mulekotecps2022/JurisAI`.
 - Branch de trabalho: `work/jurisai-primeira-entrega-2026-11-02`.
-- A branch continua divergente da `main`; não fazer merge automático. Recalcular ahead/behind antes de abrir qualquer PR.
+- A branch continua divergente da `main` (169 commits à frente e 2 atrás na última comparação); não fazer merge automático.
 - Supabase de desenvolvimento: `qvmkafixxfahabcgtlgz`, região `sa-east-1`, PostgreSQL 17, estado ativo/saudável.
 - Projeto antigo `jurisai-db`: inativo e não alterado.
 - Seis migrations registradas no banco de desenvolvimento, incluindo `fk_supporting_indexes` (versão remota `20261104161807`).
@@ -34,33 +34,34 @@ A migration `fk_supporting_indexes` foi aplicada com sucesso no projeto de desen
 
 O arquivo de origem está em `supabase/migrations/20261104130000_fk_supporting_indexes.sql`; o Supabase registrou a execução sob a versão `20261104161807`. Essa diferença de timestamp deve ser reconciliada com a convenção de migrations do Supabase CLI antes de usar `db push`/deploy automatizado por CLI. Não aplicar novamente às cegas.
 
-## RLS e Storage
+## RLS, Storage e rotas privadas
 
-As tabelas jurídicas minúsculas têm RLS habilitado e policies por operação. A tabela maiúscula permanece fechada. O bucket é privado e não possui policy de acesso direto para navegador. Upload e assinatura de URL são operações server-side com chave privilegiada.
+As tabelas jurídicas minúsculas têm RLS habilitado e policies por operação. A tabela maiúscula permanece fechada. O bucket é privado e não possui policy de acesso direto para navegador.
 
-Foi corrigida a rota de download: primeiro valida a sessão e lê os metadados pela sessão do usuário, sob RLS; somente depois utiliza o cliente administrativo server-only para emitir URL assinada por 300 segundos. O navegador não recebe a chave secreta. URL já emitida permanece válida até expirar; uma revogação bloqueia novas autorizações, mas não invalida retroativamente um link já assinado.
+A rota de download foi corrigida: primeiro valida a sessão e lê os metadados pela sessão do usuário, sob RLS; somente depois utiliza o cliente administrativo server-only para emitir URL assinada por 300 segundos. O navegador não recebe a chave secreta. URL já emitida permanece válida até expirar; uma revogação bloqueia novas autorizações, mas não invalida retroativamente um link já assinado.
+
+As telas `/gestao` e `/documentos` agora exigem sessão autenticada no middleware. Sem configuração de Auth, essas rotas falham fechadas e redirecionam para login. O fluxo de magic link preserva o destino relativo e o callback rejeita destinos de outra origem. Os endpoints de API continuam realizando sua própria validação de sessão e autorização.
 
 ## CI e testes
 
 O workflow foi ajustado para aplicar todas as migrations SQL em ordem alfabética no PostgreSQL descartável, executar o novo teste de índices e manter os testes multiusuário. A fixture de CI foi alinhada para instalar pgvector no schema `extensions`, como a migration de baseline espera.
 
-Os arquivos estão na branch, mas a aprovação da execução de GitHub Actions ainda não pôde ser confirmada por meio do conector disponível. O status de deployment da Vercel não deve ser confundido com aprovação do workflow de segurança. Não declarar CI verde até obter logs/resultado dos jobs.
+Foram ampliados os testes de contrato para cobrir assinatura server-side, proteção de rotas privadas e retorno seguro ao destino após login. Os arquivos estão na branch, mas a aprovação da execução de GitHub Actions ainda não pôde ser confirmada por meio do conector disponível. O status de deployment da Vercel não deve ser confundido com aprovação do workflow de segurança. Não declarar CI verde até obter logs/resultado dos jobs.
 
 ## Limitações e bloqueios
 
 - Não há scanner antimalware integrado. Uploads devem permanecer em quarentena; downloads continuam bloqueados até existir inspeção confiável.
 - A checagem de extensão/MIME/assinatura é preliminar; DOCX/XLSX exigem inspeção estrutural e antimalware.
 - A interface `/documentos` ainda usa registros fictícios em memória e não está conectada ao banco nem ao endpoint de upload.
-- O workspace de gestão também precisa de integração real com Supabase e de rotas protegidas.
+- O workspace de gestão também precisa de integração real com Supabase e de rotas protegidas (a autenticação da rota está implementada; a persistência ainda não).
 - Ainda faltam testes end-to-end reais de Auth, RLS, upload, assinatura/expiração e revogação.
 - O ambiente Cloudflare ainda precisa de secrets, deployment e smoke tests validados.
 
 ## Próxima sequência segura
 
 1. Confirmar execução do GitHub Actions e corrigir qualquer falha antes de tratar o CI como aprovado.
-2. Corrigir e testar a integração de download com cliente administrativo server-only, já versionada.
-3. Integrar login, processos, participantes e documentos às consultas Supabase sob RLS.
-4. Fazer testes com proprietário, editor, viewer, usuário sem vínculo e anônimo.
-5. Integrar scanner/quarentena antes de liberar downloads.
-6. Validar secrets e deploy Cloudflare em desenvolvimento.
-7. Só então planejar a consolidação; sem merge automático com `main` e sem alterações em produção.
+2. Integrar login e sessão reais com os módulos de processos, participantes e documentos.
+3. Testar com proprietário, editor, viewer, usuário sem vínculo e anônimo.
+4. Integrar scanner/quarentena antes de liberar downloads.
+5. Validar secrets e deploy Cloudflare em desenvolvimento.
+6. Só então planejar a consolidação; sem merge automático com `main` e sem alterações em produção.

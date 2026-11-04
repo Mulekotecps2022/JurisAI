@@ -1,17 +1,33 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+function getCanonicalAppUrl(request: NextRequest) {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (configuredUrl) return new URL(configuredUrl);
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("NEXT_PUBLIC_APP_URL is required in production.");
+  }
+  return new URL(request.url);
+}
+
 export async function GET(request: NextRequest) {
+  let appUrl: URL;
+  try {
+    appUrl = getCanonicalAppUrl(request);
+  } catch {
+    return NextResponse.json({ error: "auth_configuration_missing" }, { status: 503 });
+  }
+
   const code = request.nextUrl.searchParams.get("code");
   const requestedNext = request.nextUrl.searchParams.get("next") ?? "/";
-  const candidateUrl = new URL(requestedNext, request.url);
+  const candidateUrl = new URL(requestedNext, appUrl);
   const safeNextUrl =
-    candidateUrl.origin === request.nextUrl.origin
+    candidateUrl.origin === appUrl.origin
       ? candidateUrl
-      : new URL("/", request.url);
+      : new URL("/", appUrl);
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login?error=missing_code", request.url));
+    return NextResponse.redirect(new URL("/login?error=missing_code", appUrl));
   }
 
   try {
@@ -19,11 +35,11 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      return NextResponse.redirect(new URL("/login?error=invalid_code", request.url));
+      return NextResponse.redirect(new URL("/login?error=invalid_code", appUrl));
     }
 
     return NextResponse.redirect(safeNextUrl);
   } catch {
-    return NextResponse.redirect(new URL("/login?error=auth_unavailable", request.url));
+    return NextResponse.redirect(new URL("/login?error=auth_unavailable", appUrl));
   }
 }

@@ -35,7 +35,7 @@ O arquivo de origem está em `supabase/migrations/20261104130000_fk_supporting_i
 
 A migration `people_contact_fields` foi aplicada no ambiente de desenvolvimento (versão remota `20261104162829`). Foram adicionados `kind`, `email`, `phone` e `notes` em `public.tenentes`, mantendo o registro legado e as policies de RLS. Os grants permitem criar/editar dados de contato, mas não permitem alterar `created_by_user_id`; `anon` não tem SELECT.
 
-Os tipos de `src/types/database.ts` foram regenerados diretamente do schema de desenvolvimento.
+Os tipos de `src/types/database.ts` foram regenerados diretamente do schema de desenvolvimento. A migration de campos de contato tem origem em `20261104162600_people_contact_fields.sql`, aplicada pelo Supabase sob a versão remota `20261104162829`.
 
 Foram implementadas APIs:
 - `GET/POST /api/pessoas`, com validação Zod, sessão Auth e RLS;
@@ -59,7 +59,7 @@ O workflow aplica todas as migrations SQL em ordem no PostgreSQL descartável, e
 - Execução `41867455145`: bateria SQL passou; TypeScript falhou porque os tipos ainda refletiam o schema anterior. Os tipos foram regenerados e commitados.
 - Execução mais recente observada `41867624972`: typecheck, testes de contrato e bateria SQL passaram; build de produção/Cloudflare ainda precisava terminar no momento desta atualização.
 
-Não declarar a entrega validada integralmente até o último workflow concluir com sucesso.
+Execução mais recente observada: GitHub Actions run 41869129364 concluído com sucesso nos dois jobs (lint, TypeScript, testes de contrato, build Next.js, build Cloudflare, migrations e testes SQL multiusuário).
 
 ## Limitações e bloqueios
 

@@ -42,9 +42,11 @@ Configurar apenas no ambiente seguro de servidor:
 
 A chave secreta nunca deve ser versionada ou exposta em `NEXT_PUBLIC_*`.
 
-## Estado da interface
+## Proteção das rotas e estado da interface
 
-A página `/documentos` ainda usa dados demonstrativos em memória. Ela não está conectada ao endpoint de upload nem às tabelas reais. A próxima entrega funcional precisa conectar autenticação, processos, metadados e listagem de documentos com autorização RLS.
+As rotas de gestão e documentos exigem sessão autenticada via middleware. O fluxo de magic link mantém o destino relativo solicitado e o callback rejeita redirecionamento para outra origem.
+
+A página `/documentos` e o workspace de gestão ainda usam dados demonstrativos em memória. Não estão conectados ao banco nem ao endpoint de upload; a autenticação protege o acesso à tela, mas ainda não existe persistência funcional de negócio.
 
 ## Critérios antes de produção
 

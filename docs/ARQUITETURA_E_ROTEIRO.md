@@ -163,3 +163,27 @@ Não aplicar DDL até concluir o desenho de propriedade e o mapeamento de compat
 - A biblioteca de documentos continua demonstrativa. Upload permanece em quarentena até integração de scanner antimalware.
 - PR #1 continua em rascunho para validação; não mesclar. A branch segue divergente da main.
 - Produção e EVOLUÇÃO AI permanecem fora do escopo e sem alterações.
+
+
+## Retificação de estado — 04/11/2026, 16:50 UTC
+
+Esta seção é a referência mais recente e substitui afirmações históricas anteriores deste documento que indiquem que as migrations não foram aplicadas, que não há conta Auth ou que o workspace/documentos ainda usam somente dados demonstrativos.
+
+- As sete migrations abaixo estão aplicadas no projeto Supabase `JurisAI-Desenvolvimento`: `20261103014955`, `20261103015008`, `20261103015013`, `20261103015018`, `20261103015107`, `20261104161807` e `20261104162829`.
+- A identidade administrativa inicial aceitou o convite, confirmou o e-mail, recebeu perfil pelo trigger e foi promovida para `platform_admin` no ambiente de desenvolvimento.
+- Teste SQL sob o papel `authenticated` confirmou `is_platform_admin() = true`; a conta não recebeu acesso implícito a processos, documentos ou embeddings.
+- `anon` não possui SELECT nas tabelas de perfis, processos e documentos. O cliente autenticado não pode alterar `platform_role`, inserir/apagar perfis, apagar processos ou inserir embeddings.
+- Rotas de pessoas e processos usam sessão Supabase Auth e RLS; o workspace carrega e persiste dados por essas APIs.
+- A rota de consulta de documentos usa sessão e RLS. Upload permanece desabilitado na UI e na API enquanto não houver scanner antimalware e inspeção estrutural.
+- GitHub Actions run `41870127147` terminou com sucesso nos dois jobs: auditoria de dependências, lint, TypeScript, testes de contrato, build Next.js, build Cloudflare e testes SQL multiusuário.
+- A validação de login via navegador, cookies e sessão na aplicação hospedada ainda não foi realizada; a validação SQL não substitui esse teste.
+- Os nomes/timestamps locais dos arquivos de migrations ainda precisam ser reconciliados com as versões remotas antes de automatizar `db push`.
+- O PR #1 continua draft, não mesclado. A divergência com `main` permanece pendente de revisão. Produção e EVOLUÇÃO AI seguem sem alterações.
+
+### Próximos passos
+
+1. Validar o login real na aplicação de desenvolvimento e a sessão SSR.
+2. Executar testes end-to-end com usuários distintos para owner/editor/viewer e usuário sem vínculo.
+3. Integrar scanner antimalware e análise estrutural antes de liberar upload/download de documentos.
+4. Alinhar os arquivos de migration com o histórico remoto antes de qualquer automação de deploy.
+5. Validar Cloudflare deployment e smoke tests no ambiente de desenvolvimento.

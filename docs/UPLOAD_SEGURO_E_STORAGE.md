@@ -1,62 +1,59 @@
 # Upload seguro e Storage privado — JurisAI
 
-**Estado:** migration e endpoint preparados na branch de desenvolvimento. Não implantados no Supabase nem no Cloudflare.
+**Estado em 04/11/2026:** migrations de segurança e Storage aplicadas no Supabase `JurisAI-Desenvolvimento`. Bucket privado criado. Nenhuma alteração em produção; nenhum documento real enviado.
 
 ## Decisão de segurança
 
-O bucket `case-documents` é privado. A gravação de metadados e arquivos é feita exclusivamente por endpoint server-side usando uma chave secreta que nunca chega ao navegador. O endpoint valida a sessão Supabase e confirma proprietário/editor do processo antes de usar a credencial privilegiada.
+O bucket `case-documents` é privado, com limite de 25 MiB e allowlist MIME. O navegador não possui policies de leitura ou escrita em `storage.objects`. Upload e assinatura de URLs são feitos por rotas server-side com chave secreta, depois de validar identidade e autorização de processo.
 
-A chave de servidor é um segredo de alto impacto: deve ser configurada apenas no ambiente de servidor (Cloudflare Worker secret / ambiente de execução), nunca em `NEXT_PUBLIC_*`, GitHub ou arquivo versionado.
+## Upload
 
-## Migration
-
-`supabase/migrations/20261103000400_private_document_storage.sql`
-
-- cria/valida bucket privado com limite 25 MiB e allowlist MIME;
-- adiciona metadados de armazenamento, hash SHA-256 e estado de quarentena;
-- remove gravação direta do navegador em `public.document` e `storage.objects`;
-- permite leitura de objetos somente quando o documento está `available` e o usuário tem acesso ao processo;
-- não permite overwrite/replace por cliente;
-- não expõe arquivo recém-enviado antes de uma etapa confiável de inspeção.
-
-Se um bucket de mesmo nome existir com configuração divergente, a migration aborta em vez de torná-lo público ou alterar suas restrições silenciosamente.
-
-## Endpoint
-
-`POST /api/documentos/upload` recebe multipart com `caseId` e `file`.
+`POST /api/documentos/upload`:
 - exige sessão válida;
-- verifica owner/editor via políticas do banco e membership;
-- verifica tamanho, MIME, extensão e assinatura/magic bytes suportada;
+- verifica proprietário/editor através de consultas RLS;
+- verifica tamanho, MIME, extensão e assinatura preliminar;
 - calcula SHA-256;
-- cria registro com status `quarantined`;
-- grava em caminho opaco `<case UUID>/<document UUID>/original.<ext>`;
-- não retorna URL pública nem signed URL;
-- mantém registro de falha com status `upload_failed` se a gravação falhar.
+- cria metadados com status `quarantined`;
+- grava o objeto em caminho opaco;
+- revalida a autorização após a gravação;
+- não retorna URL pública ou signed URL.
 
-Formatos DOCX/XLSX são contêineres ZIP: a assinatura PK inicial é apenas uma verificação preliminar, não comprova estrutura OOXML válida nem segurança do conteúdo.
+## Download corrigido
 
-## Quarentena é obrigatória
+`GET /api/documentos/[documentId]/download`:
+- exige sessão válida;
+- lê metadados através do cliente do usuário, com RLS;
+- bloqueia status diferente de `available`;
+- usa o cliente administrativo server-only exclusivamente para gerar a URL assinada de 300 segundos;
+- responde com redirecionamento e cabeçalhos `no-store`.
 
-A inspeção preliminar não substitui antivírus, análise de ZIP bombs, validação estrutural de documentos, OCR isolado ou sandbox. Não existe ainda scanner integrado. Por isso, os arquivos ficam em `quarantined` e a policy de Storage não permite download nem signed URL enquanto não forem liberados por processo confiável.
+Essa separação é necessária porque Storage não tem policy de navegador. Não conceder policy ampla só para fazer o download funcionar. Um link previamente assinado continua válido até expirar; a revogação bloqueia novas assinaturas, não invalida retroativamente o link emitido.
 
-## Dependências operacionais
+## Quarentena obrigatória
 
-Configurar no ambiente de servidor:
+Não existe scanner antimalware integrado. Os arquivos devem permanecer em `quarantined`; não promover a `available` manualmente e não liberar downloads até que exista verificação confiável. Magic bytes e MIME não substituem antivírus, inspeção estrutural OOXML, proteção contra ZIP bombs ou sandbox.
+
+## Segredos
+
+Configurar apenas no ambiente seguro de servidor:
 - `NEXT_PUBLIC_SUPABASE_URL`;
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`;
-- `SUPABASE_SECRET_KEY` (ou `SUPABASE_SERVICE_ROLE_KEY` legado), como secret privado.
+- `SUPABASE_SECRET_KEY` (ou `SUPABASE_SERVICE_ROLE_KEY` legado).
 
-Não adicionar a chave secreta ao repositório. Não foi configurada nem testada no ambiente Cloudflare.
+A chave secreta nunca deve ser versionada ou exposta em `NEXT_PUBLIC_*`.
 
-## Testes e limites
+## Estado da interface
 
-`supabase/tests/private_document_storage.sql` verifica estrutura, bucket, grants e policy. Testes comportamentais precisam de contas owner/editor/viewer/usuário externo e de um ambiente isolado.
+A página `/documentos` ainda usa dados demonstrativos em memória. Ela não está conectada ao endpoint de upload nem às tabelas reais. A próxima entrega funcional precisa conectar autenticação, processos, metadados e listagem de documentos com autorização RLS.
 
-A rota não deve ser considerada produção pronta até que:
-1. as migrations 001–004 tenham sido aplicadas e testadas em ambiente de desenvolvimento isolado;
-2. a secret esteja configurada em ambiente seguro;
-3. scanner/antimalware e worker de quarentena existam;
-4. signed URL curta (5 minutos) seja implementada somente após status `available`;
-5. limites de requisição/rate limit, logs sem conteúdo sensível e observabilidade estejam validados.
+## Critérios antes de produção
 
-**Nenhuma alteração foi aplicada ao banco principal, nenhum bucket foi criado no projeto ativo e nenhum arquivo real foi enviado.**
+1. CI verde confirmado por logs.
+2. Testes reais com owner/editor/viewer/usuário sem acesso/anon.
+3. Scanner antimalware e fluxo de quarentena implementados.
+4. Secrets de Cloudflare configurados sem exposição.
+5. Upload, download, expiração e revogação testados.
+6. Rate limit, observabilidade e logs sem conteúdo sensível.
+7. Interface conectada aos dados reais e revisada contra exposição de dados.
+
+Produção permanece intocada.

@@ -1,16 +1,17 @@
 # Provisionamento do primeiro administrador — JurisAI
 
-**Estado:** instrução preparada; nenhum papel foi alterado no Supabase.
+**Estado em 04/11/2026:** ainda não executado no Supabase `JurisAI-Desenvolvimento`.
 
-A conta inicial já foi confirmada no Supabase Auth e indicada pelo responsável pelo projeto. A migration 20261103000100_app_user_profiles.sql cria o perfil com papel padrão user para todas as identidades. A promoção para platform_admin é uma ação separada, privilegiada e executada somente no SQL Editor do Supabase por operador autorizado.
+A consulta direta ao ambiente ativo confirmou zero registros em `auth.users` e zero perfis em `public.app_user_profiles`. Portanto, as anotações históricas que mencionavam uma conta confirmada pertenciam a outro estado/projeto e não comprovam que exista uma conta no ambiente atual.
 
-## Procedimento no ambiente de desenvolvimento
+## Passos necessários
 
-1. Aplicar a migration de perfis na branch Supabase de desenvolvimento.
-2. No SQL Editor, substituir o marcador abaixo pelo endereço da conta administrativa confirmada.
-3. Executar como administrador do banco (não pela aplicação).
-4. Verificar que exatamente um perfil foi promovido.
-5. Não gravar o e-mail nem o UUID no GitHub.
+1. Confirmar com o responsável qual endereço de e-mail será a identidade inicial.
+2. Convidar esse endereço pelo Supabase Auth (Dashboard ou fluxo administrativo seguro). Não inserir manualmente em `auth.users`.
+3. Concluir a confirmação de e-mail.
+4. A migration `app_user_profiles` já cria automaticamente um perfil com papel padrão `user` para novas identidades.
+5. No SQL Editor do projeto de desenvolvimento, executar a promoção abaixo substituindo o marcador pelo e-mail confirmado.
+6. Verificar uma única conta com papel `platform_admin`.
 
 ~~~sql
 begin;
@@ -36,7 +37,8 @@ begin
     and email_confirmed_at is not null;
 
   update public.app_user_profiles
-  set platform_role = 'platform_admin'
+  set platform_role = 'platform_admin',
+      updated_at = now()
   where user_id = target_user_id;
 
   if not found then
@@ -51,23 +53,21 @@ commit;
 ## Verificação
 
 ~~~sql
-select
-  u.email,
-  u.email_confirmed_at,
-  p.platform_role
+select p.platform_role
 from auth.users u
 join public.app_user_profiles p on p.user_id = u.id
-where lower(u.email) = lower('REPLACE_WITH_CONFIRMED_ADMIN_EMAIL');
+where lower(u.email) = lower('REPLACE_WITH_CONFIRMED_ADMIN_EMAIL')
+  and u.email_confirmed_at is not null;
 ~~~
 
-O resultado esperado é uma única conta confirmada com platform_admin.
+Resultado esperado: uma única linha com `platform_admin`.
 
-## Limites de segurança
+## Limites
 
-- Não executar o bootstrap em produção antes de validar a migration e o modelo de RLS no ambiente de desenvolvimento.
-- O papel platform_admin administra configurações da plataforma, mas não concede acesso automático a processos, documentos, participantes ou embeddings.
-- A promoção não pode ser feita pela interface do usuário, por UPDATE de perfil autenticado ou por autoelevação.
-- Não guardar o e-mail, UUID ou qualquer segredo no repositório.
-- O procedimento deve ser registrado na trilha de mudanças operacionais do projeto.
+- Não executar em produção nesta etapa.
+- Não armazenar e-mail, UUID ou segredos no GitHub.
+- `platform_admin` não concede acesso automático a processos, documentos, participantes ou embeddings.
+- Não criar usuário por INSERT manual em tabelas internas do Auth.
+- A promoção só pode ocorrer depois de confirmar a identidade pelo responsável.
 
-**Não executado:** o papel da conta inicial continua não persistido até a migration e o bootstrap serem aplicados no ambiente Supabase de desenvolvimento.
+**Pendente:** confirmação do e-mail inicial e convite pelo Supabase Auth.

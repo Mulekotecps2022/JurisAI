@@ -1,7 +1,6 @@
 -- JurisAI: explicit case ownership and per-case collaboration.
--- REVIEW ONLY. Do not apply to the primary Supabase project yet.
--- owner_user_id remains nullable until legacy ownership and controlled case
--- creation are migrated in a coordinated RLS cutover.
+-- Applied to JurisAI-Desenvolvimento as migration 20261103015013.
+-- owner_user_id remains nullable for legacy rows without verified ownership.
 
 begin;
 

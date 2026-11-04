@@ -1,8 +1,6 @@
 -- JurisAI: coordinated RLS and least-privilege cutover for legal data.
--- REVIEW ONLY. Depends on migrations:
---   20261103000100_app_user_profiles.sql
---   20261103000200_case_ownership_and_access.sql
--- Apply only in an isolated Supabase development branch after review.
+-- Applied to JurisAI-Desenvolvimento as migration 20261103015018.
+-- Depends on 20261103015008_app_user_profiles and 20261103015013_case_ownership_and_access.
 -- This does not configure Storage policies or grant platform-admin access
 -- to legal records.
 

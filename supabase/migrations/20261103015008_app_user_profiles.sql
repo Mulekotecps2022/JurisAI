@@ -1,6 +1,6 @@
 -- JurisAI: application profiles and platform-level role.
--- REVIEW ONLY: this migration has NOT been applied to Supabase.
--- Safe to apply only after reviewing the linked bootstrap and test instructions.
+-- Applied to JurisAI-Desenvolvimento as migration 20261103015008.
+-- Initial platform-admin promotion is a separate controlled data operation.
 
 begin;
 

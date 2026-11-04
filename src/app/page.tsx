@@ -1,12 +1,12 @@
 import Link from "next/link";
 
 const modules = [
-  { title: "Processos e casos", description: "Organização de casos, prazos e movimentações.", status: "Demonstração funcional", href: "/gestao" },
-  { title: "Clientes e partes", description: "Cadastro estruturado de clientes e partes relacionadas.", status: "Demonstração funcional", href: "/gestao" },
-  { title: "Documentos", description: "Biblioteca documental, classificação e acompanhamento da análise.", status: "Demonstração funcional", href: "/documentos" },
+  { title: "Processos e casos", description: "Organização de casos, prazos e movimentações.", status: "Conectado ao Supabase", href: "/gestao" },
+  { title: "Clientes e partes", description: "Cadastro estruturado de clientes e partes relacionadas.", status: "Conectado ao Supabase", href: "/gestao" },
+  { title: "Documentos", description: "Biblioteca documental, classificação e acompanhamento da análise.", status: "Consulta protegida · upload suspenso", href: "/documentos" },
   { title: "Pesquisa jurídica", description: "Pesquisa com fontes oficiais e referências verificáveis.", status: "Planejado" },
   { title: "Assistente jurídico", description: "Apoio à análise, elaboração e revisão de documentos.", status: "Planejado" },
-  { title: "Auditoria e segurança", description: "Permissões, histórico de ações e proteção de dados.", status: "Em preparação" }
+  { title: "Auditoria e segurança", description: "Permissões, histórico de ações e proteção de dados.", status: "Em validação" }
 ];
 
 export default function Home() {
@@ -25,13 +25,13 @@ export default function Home() {
         <section className="mb-8 rounded-2xl bg-juris-navy p-6 text-white shadow-sm md:p-8">
           <p className="text-sm font-medium text-blue-200">Painel geral</p>
           <h2 className="mt-2 text-2xl font-semibold">Bem-vindo ao seu ambiente jurídico</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">A fundação da plataforma está sendo preparada. Os módulos serão conectados ao banco somente depois da confirmação do schema e das políticas de acesso.</p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">A gestão de pessoas e processos já consulta e grava no Supabase sob políticas de acesso por usuário. A biblioteca documental consulta metadados protegidos; o envio de arquivos permanece suspenso até a integração de verificação antimalware.</p>
         </section>
 
         <section aria-labelledby="modules-title">
           <div className="mb-4">
             <h2 id="modules-title" className="text-xl font-semibold text-juris-navy">Módulos da plataforma</h2>
-            <p className="mt-1 text-sm text-slate-500">Estrutura inicial — funcionalidades serão habilitadas progressivamente.</p>
+            <p className="mt-1 text-sm text-slate-500">Módulos conectados ou em validação progressiva.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {modules.map((module) => (

@@ -19,7 +19,7 @@ export default function Home() {
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-juris-navy md:text-4xl">JurisAI</h1>
             <p className="mt-2 text-slate-600">Gestão e inteligência jurídica em um só lugar.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-3"><span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">Estrutura em desenvolvimento</span><Link href="/login" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-juris-navy transition hover:bg-slate-50">Acessar conta</Link></div>
+          <div className="flex flex-wrap items-center gap-3"><span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">Estrutura em desenvolvimento</span><Link href="/login" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-juris-navy transition hover:bg-slate-50">Acessar conta</Link><Link href="/administracao" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-juris-navy transition hover:bg-slate-50">Área administrativa</Link></div>
         </header>
 
         <section className="mb-8 rounded-2xl bg-juris-navy p-6 text-white shadow-sm md:p-8">

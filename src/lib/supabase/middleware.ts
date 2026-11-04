@@ -2,7 +2,9 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 function isProtectedPath(pathname: string) {
-  return pathname === "/gestao" ||
+  return pathname === "/administracao" ||
+    pathname.startsWith("/administracao/") ||
+    pathname === "/gestao" ||
     pathname.startsWith("/gestao/") ||
     pathname === "/documentos" ||
     pathname.startsWith("/documentos/");

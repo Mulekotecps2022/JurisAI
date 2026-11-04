@@ -98,6 +98,21 @@ test("workspace loads real records from authenticated API routes", async () => {
   assert.doesNotMatch(workspace, /peopleSeed|casesSeed|Demonstração local/);
 });
 
+
+test("document library reads only RLS-authorized metadata and never fabricates files", async () => {
+  const api = await read("../src/app/api/documentos/route.ts");
+  const page = await read("../src/app/documentos/page.tsx");
+  assert.match(api, /auth\.getUser\(\)/);
+  assert.match(api, /from\("document"\)/);
+  assert.match(api, /from\("case"\)/);
+  assert.doesNotMatch(api, /createSupabaseAdminClient/);
+  assert.match(page, /fetch\("\/api\/documentos"\)/);
+  assert.match(page, /Em quarentena/);
+  assert.match(page, /scanner antimalware ainda não foi integrado/);
+  assert.match(page, /document\.status === "available"/);
+  assert.doesNotMatch(page, /initialDocuments|caseOptions|doc-1|Salvar registro demonstrativo/);
+});
+
 test("admin Supabase key is server-only and not exposed as NEXT_PUBLIC", async () => {
   const admin = await read("../src/lib/supabase/admin.ts");
   const envExample = await read("../.env.example");

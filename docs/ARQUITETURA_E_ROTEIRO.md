@@ -187,3 +187,10 @@ Esta seção é a referência mais recente e substitui afirmações históricas 
 3. Integrar scanner antimalware e análise estrutural antes de liberar upload/download de documentos.
 4. Alinhar os arquivos de migration com o histórico remoto antes de qualquer automação de deploy.
 5. Validar Cloudflare deployment e smoke tests no ambiente de desenvolvimento.
+
+
+## Reconciliação do histórico de migrations — 04/11/2026
+
+Os sete arquivos em `supabase/migrations/` foram renomeados atomicamente na branch de trabalho para corresponder exatamente às sete versões já registradas no Supabase `JurisAI-Desenvolvimento`. Os conteúdos SQL não foram alterados nesta operação. A listagem posterior confirmou correspondência de todas as sete versões.
+
+**Importante:** esta reconciliação de nomes não executou `db push`, não aplicou DDL adicional e não altera produção. Antes de automatizar qualquer deploy, ainda é necessário executar uma verificação de status/dry-run com a versão apropriada do Supabase CLI e revisar o resultado.

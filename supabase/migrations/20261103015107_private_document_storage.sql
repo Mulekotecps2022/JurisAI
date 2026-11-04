@@ -1,6 +1,6 @@
 -- JurisAI private document storage.
--- REVIEW ONLY. Depends on the profile, case-access and legal-data RLS
--- migrations 20261103000100 through 20261103000300.
+-- Applied to JurisAI-Desenvolvimento as migration 20261103015107.
+-- Depends on profile, case-access and legal-data RLS migrations 20261103015008 through 20261103015018.
 -- The application server uploads with a server-only secret after verifying
 -- the user's identity and editor/owner access. Browser clients are read-only.
 -- Files remain quarantined until an independent scanner marks them available.

@@ -6,10 +6,10 @@ const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
 
 test("security migrations are ordered and storage depends on legal-data RLS", async () => {
   const files = [
-    "../supabase/migrations/20261103000100_app_user_profiles.sql",
-    "../supabase/migrations/20261103000200_case_ownership_and_access.sql",
-    "../supabase/migrations/20261103000300_legal_data_rls_cutover.sql",
-    "../supabase/migrations/20261103000400_private_document_storage.sql"
+    "../supabase/migrations/20261103015008_app_user_profiles.sql",
+    "../supabase/migrations/20261103015013_case_ownership_and_access.sql",
+    "../supabase/migrations/20261103015018_legal_data_rls_cutover.sql",
+    "../supabase/migrations/20261103015107_private_document_storage.sql"
   ];
   const contents = await Promise.all(files.map(read));
   assert.match(contents[0], /platform_role.*platform_admin/s);
@@ -20,7 +20,7 @@ test("security migrations are ordered and storage depends on legal-data RLS", as
 });
 
 test("private bucket and fail-closed Storage integration are explicit", async () => {
-  const sql = await read("../supabase/migrations/20261103000400_private_document_storage.sql");
+  const sql = await read("../supabase/migrations/20261103015107_private_document_storage.sql");
   assert.match(sql, /'case-documents',[\s\S]*?false,[\s\S]*?26214400/);
   assert.match(sql, /'quarantined',[\s\S]*?'available'/);
   assert.match(sql, /Supabase owns storage\.objects/i);

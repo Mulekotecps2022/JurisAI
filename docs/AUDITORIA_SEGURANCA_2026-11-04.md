@@ -109,3 +109,10 @@ GitHub Actions run `41870127147` terminou com sucesso nos dois jobs. O job `data
 - A tabela legada `public."CASE"` permanece intencionalmente fechada; não criar policies sem identificar sua finalidade.
 - As funções SECURITY DEFINER acessíveis a `authenticated` são chamadas pelas policies RLS e permanecem com `search_path = ''`, referências qualificadas e EXECUTE revogado de PUBLIC/anon; não revogar indiscriminadamente.
 - PR #1 permanece em draft, sem merge; `main` e produção não foram alteradas.
+
+
+## Reconciliação do histórico de migrations — 04/11/2026
+
+Os sete arquivos em `supabase/migrations/` foram renomeados atomicamente na branch de trabalho para corresponder exatamente às sete versões já registradas no Supabase `JurisAI-Desenvolvimento`. Os conteúdos SQL não foram alterados nesta operação. A listagem posterior confirmou correspondência de todas as sete versões.
+
+**Importante:** esta reconciliação de nomes não executou `db push`, não aplicou DDL adicional e não altera produção. Antes de automatizar qualquer deploy, ainda é necessário executar uma verificação de status/dry-run com a versão apropriada do Supabase CLI e revisar o resultado.

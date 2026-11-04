@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -18,13 +19,15 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Documento não encontrado." }, { status: 404 });
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data: authData, error: authError } = await supabase.auth.getUser();
+  // The user's session is the authorization boundary. The RLS-protected
+  // metadata query must succeed before the privileged Storage client is used.
+  const userClient = await createSupabaseServerClient();
+  const { data: authData, error: authError } = await userClient.auth.getUser();
   if (authError || !authData.user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
 
-  const { data: document, error } = await supabase
+  const { data: document, error } = await userClient
     .from("document")
     .select("id, file_name, status, storage_bucket, storage_path")
     .eq("id", parsedId.data)
@@ -45,7 +48,19 @@ export async function GET(_request: Request, context: RouteContext) {
     );
   }
 
-  const { data: signed, error: signingError } = await supabase.storage
+  // Storage intentionally has no browser policies. Only after the RLS query
+  // above proves the user's access do we use the server-only secret to sign.
+  let admin;
+  try {
+    admin = createSupabaseAdminClient();
+  } catch {
+    return NextResponse.json(
+      { error: "O serviço de armazenamento ainda não foi configurado no servidor." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
+  const { data: signed, error: signingError } = await admin.storage
     .from("case-documents")
     .createSignedUrl(document.storage_path, SIGNED_URL_SECONDS, {
       download: document.file_name
@@ -58,6 +73,8 @@ export async function GET(_request: Request, context: RouteContext) {
     );
   }
 
+  // A signed URL already issued remains valid until expiry. Keep this window
+  // short and never persist or expose it except through this redirect.
   return NextResponse.redirect(signed.signedUrl, {
     status: 302,
     headers: {

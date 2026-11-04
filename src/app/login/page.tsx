@@ -17,11 +17,18 @@ export default function LoginPage() {
 
     try {
       const supabase = createSupabaseBrowserClient();
+      const requestedNext = new URLSearchParams(window.location.search).get("next");
+      const safeNext = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+        ? requestedNext
+        : "/";
+      const callbackUrl = new URL("/auth/confirm", window.location.origin);
+      callbackUrl.searchParams.set("next", safeNext);
+
       const { error: authError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/auth/confirm`
+          emailRedirectTo: callbackUrl.toString()
         }
       });
 

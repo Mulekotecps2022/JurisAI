@@ -79,3 +79,33 @@ Execução mais recente observada: GitHub Actions run 41869129364 concluído com
 4. Conectar a biblioteca de documentos e integrar scanner/quarentena antes de liberar downloads.
 5. Validar secrets e deploy Cloudflare em desenvolvimento.
 6. Resolver a divergência de migrations/branch e só então planejar consolidação; sem merge automático com `main` e sem alterações em produção.
+
+
+## Retificação após provisionamento e validação de permissões — 04/11/2026, 16:50 UTC
+
+A identidade administrativa inicial já aceitou o convite e confirmou o e-mail. O perfil foi criado pelo trigger e promovido para `platform_admin` somente em `JurisAI-Desenvolvimento`. A verificação posterior confirmou o papel persistido.
+
+### Testes adicionais no banco ativo
+
+Foram executadas consultas sob contexto real de privilégios PostgreSQL, sem inserir ou alterar dados de negócio:
+
+- Com `SET LOCAL ROLE authenticated` e o subject JWT da conta inicial, `auth.uid()` resolveu a identidade correta e `public.is_platform_admin()` retornou `true`.
+- A conta visualizou um único perfil (o próprio) e zero processos, documentos ou embeddings sem vínculo.
+- `anon`: sem SELECT em `app_user_profiles`, `case` e `document`, e sem EXECUTE em `is_platform_admin()`.
+- `authenticated`: EXECUTE em `is_platform_admin()`, SELECT concedido nas tabelas protegidas sob RLS.
+- O cliente autenticado não pode atualizar `platform_role`, inserir/apagar perfis, apagar processos ou inserir embeddings.
+- O cliente pode atualizar somente o campo de perfil `display_name`, conforme o grant de coluna.
+
+### CI
+
+GitHub Actions run `41870127147` terminou com sucesso nos dois jobs. O job `database-security` aplicou as migrations em PostgreSQL descartável, passou nas assertions estruturais e na bateria multiusuário. O job `validate` passou por auditoria de dependências, lint, typecheck, testes de contrato, build Next.js e build Cloudflare Workers.
+
+### Pendências atuais
+
+- O teste de login, cookies e sessão SSR pelo navegador na aplicação hospedada ainda depende de validação end-to-end.
+- As migrations continuam com timestamps divergentes entre arquivos locais e histórico remoto; não executar `db push` até reconciliar.
+- Upload continua bloqueado até integrar scanner antimalware e inspeção estrutural.
+- O aviso do Supabase sobre proteção contra senhas vazadas desativada permanece pendente de habilitação nas configurações Auth.
+- A tabela legada `public."CASE"` permanece intencionalmente fechada; não criar policies sem identificar sua finalidade.
+- As funções SECURITY DEFINER acessíveis a `authenticated` são chamadas pelas policies RLS e permanecem com `search_path = ''`, referências qualificadas e EXECUTE revogado de PUBLIC/anon; não revogar indiscriminadamente.
+- PR #1 permanece em draft, sem merge; `main` e produção não foram alteradas.

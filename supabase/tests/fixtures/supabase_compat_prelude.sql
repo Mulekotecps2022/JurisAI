@@ -1,7 +1,8 @@
 -- Minimal Supabase-compatible PostgreSQL fixture for CI only.
 -- This is an isolated disposable database, never the user's Supabase project.
 
-create extension if not exists vector;
+create schema if not exists extensions;
+create extension if not exists vector with schema extensions;
 
 do $$
 begin
@@ -38,6 +39,7 @@ grant usage on schema auth to anon, authenticated, service_role;
 grant select on auth.users to authenticated, service_role;
 grant usage on schema public to anon, authenticated, service_role;
 grant usage on schema storage to anon, authenticated, service_role;
+grant usage on schema extensions to anon, authenticated, service_role;
 
 create table public.tenentes (
   id uuid primary key default gen_random_uuid(),
@@ -72,7 +74,7 @@ create table public.embedding (
   id uuid primary key default gen_random_uuid(),
   document_id uuid references public.document(id),
   content text not null,
-  vector vector(3),
+  vector extensions.vector(3),
   created_at timestamptz not null default now()
 );
 

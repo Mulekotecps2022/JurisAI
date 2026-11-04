@@ -1,13 +1,31 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
+function authErrorMessage(code: string | null) {
+  switch (code) {
+    case "missing_code":
+      return "O link de acesso chegou sem o código de confirmação. Solicite um novo link.";
+    case "invalid_code":
+      return "O link expirou ou já foi utilizado. Solicite um novo link e abra somente a mensagem mais recente.";
+    case "auth_unavailable":
+      return "Não foi possível concluir a autenticação agora. Tente novamente mais tarde.";
+    default:
+      return "";
+  }
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setError(authErrorMessage(params.get("error")));
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,7 +39,16 @@ export default function LoginPage() {
       const safeNext = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
         ? requestedNext
         : "/";
-      const callbackUrl = new URL("/auth/confirm", window.location.origin);
+      const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL;
+      const appOrigin = configuredAppUrl
+        ? new URL(configuredAppUrl).origin
+        : window.location.origin;
+
+      if (process.env.NODE_ENV === "production" && !configuredAppUrl) {
+        throw new Error("APP_URL_NOT_CONFIGURED");
+      }
+
+      const callbackUrl = new URL("/auth/confirm", appOrigin);
       callbackUrl.searchParams.set("next", safeNext);
 
       const { error: authError } = await supabase.auth.signInWithOtp({
@@ -32,10 +59,23 @@ export default function LoginPage() {
         }
       });
 
-      if (authError) throw authError;
-      setMessage("Se o endereço estiver cadastrado e autorizado, você receberá um link de acesso por e-mail.");
-    } catch {
-      setError("Não foi possível solicitar o acesso. Confira a configuração e tente novamente mais tarde.");
+      if (authError) {
+        if (authError.message.toLowerCase().includes("rate limit")) {
+          throw new Error("EMAIL_RATE_LIMIT");
+        }
+        throw new Error("EMAIL_REQUEST_FAILED");
+      }
+
+      setMessage("Se o endereço estiver cadastrado e autorizado, você receberá um link seguro de acesso.");
+    } catch (cause) {
+      const reason = cause instanceof Error ? cause.message : "";
+      if (reason === "EMAIL_RATE_LIMIT") {
+        setError("O serviço de e-mail atingiu o limite temporário de envios. Aguarde antes de solicitar outro link.");
+      } else if (reason === "APP_URL_NOT_CONFIGURED") {
+        setError("O endereço seguro do aplicativo ainda não está configurado neste ambiente.");
+      } else {
+        setError("Não foi possível solicitar o acesso. Confira o endereço e tente novamente mais tarde.");
+      }
     } finally {
       setLoading(false);
     }

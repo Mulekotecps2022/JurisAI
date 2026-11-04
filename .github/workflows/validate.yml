@@ -79,5 +79,6 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f supabase/tests/legal_data_rls_security.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/private_document_storage.sql
           psql -v ON_ERROR_STOP=1 -f supabase/tests/fk_supporting_indexes.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/people_contact_fields.sql
       - name: Run multi-user RLS behavior tests
         run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_behavior.sql

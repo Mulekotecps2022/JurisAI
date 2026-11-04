@@ -50,6 +50,10 @@ export async function POST(request: Request) {
   if (fetchSite === "cross-site") {
     return jsonError("Origem da solicitação não autorizada.", 403);
   }
+
+  if (process.env.JURISAI_ENABLE_UPLOADS !== "true") {
+    return jsonError("O envio está desabilitado até a integração do scanner antimalware.", 503);
+  }
   if (origin) {
     try {
       if (new URL(origin).origin !== new URL(request.url).origin) {

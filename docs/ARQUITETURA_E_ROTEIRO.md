@@ -145,7 +145,21 @@ Não aplicar DDL até concluir o desenho de propriedade e o mapeamento de compat
 - Criada página `/login` com solicitação de link por e-mail via Supabase Auth.
 - O fluxo usa `shouldCreateUser: false`: não há cadastro público pela interface; usuários devem ser provisionados pelo administrador do projeto.
 - Criada rota `/auth/confirm` para troca segura do código PKCE por sessão, com validação de destino relativo para evitar open redirect.
-- Middleware renova/valida claims da sessão; a proteção das rotas de negócio ainda será aplicada junto com as políticas RLS.
+- Middleware renova/valida claims da sessão e exige autenticação em /gestao e /documentos; cada API também valida a sessão e as operações do banco seguem as policies RLS.
 - O Supabase Auth deve ter `/auth/confirm` e os domínios de desenvolvimento/produção configurados na allow list de Redirect URLs.
 
 - A tela de login usa mensagem genérica para não revelar se um e-mail existe; o callback valida a origem do redirecionamento para evitar open redirect.
+
+
+## Estado de integração — 04/11/2026
+
+- Supabase de desenvolvimento com migrations de perfil, propriedade, RLS, Storage, índices de FK e campos de contato de pessoas aplicadas.
+- Todas as 12 FKs auditadas possuem índices de suporte.
+- Rotas /gestao e /documentos protegidas por sessão; APIs de pessoas e processos passam por Supabase Auth e RLS.
+- Workspace de gestão conectado às APIs de pessoas/processos; o cadastro de pessoas e a criação de processos deixam de ser dados fictícios.
+- Tipos TypeScript regenerados diretamente a partir do schema real do Supabase.
+- Testes SQL estruturais e multiusuário passaram no PostgreSQL descartável; o workflow mais recente ainda precisa concluir os builds finais.
+- O Supabase de desenvolvimento está sem usuários Auth; login real depende do convite e promoção da conta inicial.
+- A biblioteca de documentos continua demonstrativa. Upload permanece em quarentena até integração de scanner antimalware.
+- PR #1 continua em rascunho para validação; não mesclar. A branch segue divergente da main.
+- Produção e EVOLUÇÃO AI permanecem fora do escopo e sem alterações.

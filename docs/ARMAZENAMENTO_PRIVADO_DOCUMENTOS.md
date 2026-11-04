@@ -1,80 +1,70 @@
-# Armazenamento privado de documentos — plano de segurança
+# Armazenamento privado de documentos — JurisAI
 
-**Estado:** desenho técnico preparado; nenhuma bucket, policy ou migration foi criada nesta etapa.
+**Estado atualizado em 04/11/2026:** migrations 001–004 aplicadas no projeto Supabase de desenvolvimento `JurisAI-Desenvolvimento` (`qvmkafixxfahabcgtlgz`). O bucket `case-documents` existe e está privado. O projeto de produção não foi alterado.
 
-## Diagnóstico do projeto em 02/11/2026
+## Diagnóstico histórico — 02/11/2026
 
-A inspeção direta do projeto Supabase `vwqzrhybemvhqsbsbfjp` encontrou:
+A primeira inspeção encontrou as tabelas públicas sem RLS (exceto `CASE`, que já tinha RLS sem policy), nenhum bucket e nenhum histórico de migrations. Esse diagnóstico descreve o estado anterior às migrations e não o estado atual.
 
-- Schema `storage` ativo e tabelas gerenciadas pelo Supabase.
-- Nenhum bucket em `storage.buckets`.
-- Nenhuma policy em `pg_policies` para `storage.objects` ou tabelas públicas.
-- RLS habilitado em `storage.objects`, mas sem policies explícitas.
-- Privilégios SQL de `anon` e `authenticated` presentes em `storage.objects`; isso não substitui as policies RLS.
-- As tabelas públicas `case`, `document`, `embedding` e `tenentes` continuam com RLS desabilitado; `CASE` tem RLS habilitado sem policy.
+## Configuração atual
 
-A documentação oficial do Supabase confirma que buckets privados dependem de policies em `storage.objects`, e que downloads de buckets privados exigem autorização ou URL assinada com prazo limitado. Um bucket privado sem policies não permite uploads, o que é o comportamento seguro padrão.
+- Bucket privado: `case-documents`.
+- Limite máximo: 25 MiB por arquivo.
+- MIME allowlist: PDF, JPEG, PNG, TIFF, DOC/DOCX, XLS/XLSX, TXT e EML.
+- Chaves de objeto opacas no formato `<case_uuid>/<document_uuid>/original.<ext>`.
+- Metadados em `public.document`, com hash SHA-256 e estado.
+- Estado inicial de cada upload: `quarantined`.
+- Sem policy de acesso Storage direta para `anon` ou `authenticated`; o navegador não pode enviar nem ler objetos diretamente.
 
-## Decisões técnicas propostas
+## Fluxo de upload
 
-1. Bucket único privado: `case-documents`; nunca público.
-2. Limite inicial por arquivo: 25 MiB, sujeito a ajuste após testes.
-3. Tipos aceitos inicialmente: PDF, JPEG, PNG, TIFF, DOC/DOCX, XLS/XLSX, TXT e EML. SVG, HTML, executáveis e arquivos compactados ficam bloqueados.
-4. Caminho opaco por processo e documento: `<case_uuid>/<document_uuid>/original.<ext>`. O nome original permanece nos metadados, não no caminho físico.
-5. Upload/download sempre autenticado, com autorização verificada no banco para o processo relacionado.
-6. URLs assinadas somente quando necessárias, com expiração curta (proposta inicial: 5 minutos); nunca persistir URLs assinadas no banco.
-7. Não usar `service_role` no navegador. Preferir JWT do usuário e policies RLS; qualquer operação privilegiada fica restrita a servidor confiável.
-8. Validar tamanho, extensão, MIME declarado e assinatura real do conteúdo no servidor. MIME informado pelo navegador não é prova suficiente.
-9. Calcular hash SHA-256, registrar auditoria e tratar o arquivo como não confiável até passar por validação/antimalware.
-10. OCR, extração de texto e IA só depois de autorização, validação do arquivo e isolamento dos dados.
+`POST /api/documentos/upload`:
+1. valida origem e conteúdo multipart;
+2. valida UUID do processo, tamanho, nome, extensão e MIME;
+3. valida sessão com `auth.getUser()`;
+4. verifica proprietário/editor por consultas protegidas por RLS;
+5. verifica assinatura preliminar do arquivo e calcula SHA-256;
+6. grava metadados e objeto por cliente administrativo server-only;
+7. revalida acesso após o upload e remove/bloqueia o objeto se o acesso tiver sido revogado.
 
-## Modelo de metadados proposto
+A rota não retorna URL pública nem link de download. Os arquivos são mantidos em quarentena.
 
-A tabela `public.document` existente pode ser evoluída sem apagar seus campos atuais. Campos a avaliar na migration:
+## Fluxo de download
 
-- `created_by uuid` — usuário autenticado que registrou o arquivo.
-- `category text` — categoria jurídica.
-- `mime_type text`, `size_bytes bigint`, `sha256 text`.
-- `storage_bucket text` e `storage_path text` — referência ao objeto privado.
-- `status text` — recebido, em validação, em análise, analisado ou rejeitado.
-- `deleted_at timestamptz` — exclusão lógica/auditoria, se necessária.
+`GET /api/documentos/[documentId]/download`:
+1. valida UUID e sessão;
+2. consulta metadados usando o cliente do usuário, de modo que RLS comprove acesso ao processo;
+3. bloqueia qualquer registro cujo estado não seja `available`;
+4. somente depois usa cliente administrativo server-only para assinar URL por 300 segundos;
+5. redireciona sem armazenar a URL assinada.
 
-A coluna legada `file_path` deve ser preservada durante a transição. A associação `case_id` precisa ser obrigatória para documentos jurídicos, após confirmar e validar os registros existentes.
+A assinatura privilegiada é necessária porque o Storage foi intencionalmente mantido sem policies de navegador. Um link assinado já emitido pode permanecer válido até o fim dos cinco minutos, mesmo após uma revogação; a revogação impede novas assinaturas.
 
-## Bloqueadores antes de habilitar upload real
+## Bloqueador de segurança
 
-- Definir e aplicar `owner_user_id` em `public.case` e a tabela `case_access` para owner/editor/viewer.
-- Definir a política de acesso e atribuição do registro legado em `tenentes` sem proprietário conhecido.
-- Criar relação `case_participants` para separar papéis jurídicos de permissões de acesso.
-- Corrigir grants amplos e ativar RLS nas tabelas públicas com policies testadas.
-- Criar policies de Storage que consultem a autorização do usuário para o processo, em vez de confiar apenas no nome da pasta.
-- Testar usuário anônimo, usuário sem acesso, owner, editor e viewer para upload, leitura, substituição e exclusão.
+Não existe scanner antimalware integrado. Portanto:
+- o status permanece `quarantined`;
+- a rota de download não libera arquivos;
+- não promover manualmente arquivos para `available`;
+- não usar documentos reais até integração de scanner/inspeção isolada.
 
-Não criar policy permissiva baseada apenas em `auth.uid() is not null`, nome de pasta controlado pelo cliente ou bucket_id. Isso permitiria acesso entre processos.
+A assinatura de magic bytes e o MIME são verificações preliminares, não certificação de segurança. DOCX/XLSX exigem inspeção estrutural de ZIP/OOXML e proteção contra arquivos maliciosos/ZIP bombs.
 
-## Referências oficiais
+## Segredos e implantação
 
-- Supabase Storage Access Control: https://supabase.com/docs/guides/storage/security/access-control
-- Supabase Storage Buckets: https://supabase.com/docs/guides/storage/buckets/fundamentals
-- Supabase Serving assets / private buckets: https://supabase.com/docs/guides/storage/serving/downloads
+O cliente administrativo importa `server-only` e aceita `SUPABASE_SECRET_KEY` (ou a variável legada `SUPABASE_SERVICE_ROLE_KEY`) apenas no servidor. Essa secret nunca pode ir ao navegador, a `NEXT_PUBLIC_*` ou a arquivos versionados.
 
-## Estado desta entrega
+A configuração e o deploy no Cloudflare ainda precisam ser validados. A tela `/documentos` continua demonstrativa, com dados fictícios em memória; não confundir a tela com integração de upload real.
 
-O código contém validação preliminar de metadados e geração de caminhos opacos em `src/features/documents/file-policy.ts`. Isso não realiza upload e não substitui validação do conteúdo no servidor. Nenhuma alteração foi aplicada ao banco Supabase.
+## Testes pendentes
 
+- Execução verde do GitHub Actions confirmada por logs dos jobs.
+- Auth real com contas distintas.
+- Upload com owner/editor e negação para viewer/usuário sem vínculo/anon.
+- Quarentena e bloqueio de download.
+- Emissão de URL assinada apenas após liberação confiável.
+- Expiração de 300 segundos e revogação para novas assinaturas.
+- Scanner antimalware e fluxo de rejeição/limpeza.
+- Secrets, deployment e smoke tests no Cloudflare.
 
-## Implementação do upload e quarentena — 03/11/2026
-
-Foram preparados:
-- migration `20261103000400_private_document_storage.sql`, com bucket privado `case-documents`, limite de 25 MiB e allowlist MIME;
-- rota `POST /api/documentos/upload`, que exige sessão válida e verifica owner/editor antes de usar a chave privilegiada do servidor;
-- cliente Supabase administrativo exclusivamente server-side em `src/lib/supabase/admin.ts`;
-- validação preliminar de assinatura, extensão/MIME e SHA-256;
-- rota `GET /api/documentos/[documentId]/download`, que só emite redirecionamento para signed URL de 5 minutos quando status está `available` e RLS autoriza o usuário;
-- estados de quarentena e testes estruturais.
-
-**Atenção:** ainda não existe scanner/antimalware. Todo arquivo fica em `quarantined`, sem download e sem URL assinada. A checagem de magic bytes é preliminar e não prova segurança; DOCX/XLSX exigem inspeção estrutural de ZIP/OOXML. Não liberar documentos até integrar um scanner confiável.
-
-A migration retira gravação de metadados e Storage dos papéis cliente. A rota usa `SUPABASE_SECRET_KEY` (ou a variável legada `SUPABASE_SERVICE_ROLE_KEY`) somente no servidor, depois de autenticar e autorizar o usuário. Essa secret precisa ser configurada manualmente no ambiente de execução seguro; nunca deve ir para GitHub ou variável `NEXT_PUBLIC_*`.
-
-**Não implantado:** nenhuma migration, bucket, secret, upload real ou deploy foi executado.
+**Produção permanece intocada. Nenhum documento real foi enviado.**

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_user_profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          platform_role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          platform_role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          platform_role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       case: {
         Row: {
           created_at: string
@@ -49,26 +73,44 @@ export type Database = {
           },
         ]
       }
+      CASE: {
+        Row: {
+          created_at: string
+          id: number
+          Name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          Name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          Name?: string | null
+        }
+        Relationships: []
+      }
       case_access: {
         Row: {
           case_id: string
           created_at: string
           granted_by: string
-          role: "editor" | "viewer"
+          role: string
           user_id: string
         }
         Insert: {
           case_id: string
           created_at?: string
           granted_by: string
-          role: "editor" | "viewer"
+          role: string
           user_id: string
         }
         Update: {
           case_id?: string
           created_at?: string
           granted_by?: string
-          role?: "editor" | "viewer"
+          role?: string
           user_id?: string
         }
         Relationships: [
@@ -87,7 +129,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
-          role: "client" | "plaintiff" | "defendant" | "lawyer" | "responsible" | "partner" | "witness" | "expert" | "other"
+          role: string
           tenente_id: string
         }
         Insert: {
@@ -95,7 +137,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
-          role: "client" | "plaintiff" | "defendant" | "lawyer" | "responsible" | "partner" | "witness" | "expert" | "other"
+          role: string
           tenente_id: string
         }
         Update: {
@@ -103,7 +145,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
-          role?: "client" | "plaintiff" | "defendant" | "lawyer" | "responsible" | "partner" | "witness" | "expert" | "other"
+          role?: string
           tenente_id?: string
         }
         Relationships: [
@@ -123,24 +165,6 @@ export type Database = {
           },
         ]
       }
-      CASE: {
-        Row: {
-          created_at: string
-          id: number
-          Name: string | null
-        }
-        Insert: {
-          created_at: string
-          id?: number
-          Name?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: number
-          Name?: string | null
-        }
-        Relationships: []
-      }
       document: {
         Row: {
           case_id: string
@@ -152,7 +176,7 @@ export type Database = {
           mime_type: string | null
           sha256: string | null
           size_bytes: number | null
-          status: "quarantined" | "scanning" | "available" | "rejected" | "upload_failed"
+          status: string
           storage_bucket: string | null
           storage_path: string | null
         }
@@ -166,7 +190,7 @@ export type Database = {
           mime_type?: string | null
           sha256?: string | null
           size_bytes?: number | null
-          status?: "quarantined" | "scanning" | "available" | "rejected" | "upload_failed"
+          status?: string
           storage_bucket?: string | null
           storage_path?: string | null
         }
@@ -180,7 +204,7 @@ export type Database = {
           mime_type?: string | null
           sha256?: string | null
           size_bytes?: number | null
-          status?: "quarantined" | "scanning" | "available" | "rejected" | "upload_failed"
+          status?: string
           storage_bucket?: string | null
           storage_path?: string | null
         }
@@ -212,7 +236,7 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
-          document_id?: string | null
+          document_id?: string
           id?: string
           vector?: string | null
         }
@@ -230,20 +254,32 @@ export type Database = {
         Row: {
           created_at: string
           created_by_user_id: string | null
+          email: string | null
           id: string
+          kind: string
           name: string
+          notes: string | null
+          phone: string | null
         }
         Insert: {
           created_at?: string
-          created_by_user_id: string
+          created_by_user_id?: string | null
+          email?: string | null
           id?: string
+          kind?: string
           name: string
+          notes?: string | null
+          phone?: string | null
         }
         Update: {
           created_at?: string
-          created_by_user_id?: string
+          created_by_user_id?: string | null
+          email?: string | null
           id?: string
+          kind?: string
           name?: string
+          notes?: string | null
+          phone?: string | null
         }
         Relationships: []
       }
@@ -252,7 +288,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_case: { Args: { p_case_id: string }; Returns: boolean }
+      can_access_tenente: { Args: { p_tenente_id: string }; Returns: boolean }
+      can_edit_case: { Args: { p_case_id: string }; Returns: boolean }
+      can_manage_case_access: { Args: { p_case_id: string }; Returns: boolean }
+      is_platform_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

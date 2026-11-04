@@ -50,7 +50,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
   // Storage intentionally has no browser policies. Only after the RLS query
   // above proves the user's access do we use the server-only secret to sign.
-  let admin;
+  let admin: ReturnType<typeof createSupabaseAdminClient>;
   try {
     admin = createSupabaseAdminClient();
   } catch {

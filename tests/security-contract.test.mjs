@@ -43,13 +43,17 @@ test("upload route authenticates, authorizes editor/owner and quarantines", asyn
   assert.match(route, /Re-check after the privileged object write/);
 });
 
-test("download route fails closed unless scanner status is available", async () => {
+test("download uses RLS for user authorization and server-only admin signing", async () => {
   const route = await read("../src/app/api/documentos/[documentId]/download/route.ts");
-  assert.match(route, /auth\.getUser\(\)/);
+  assert.match(route, /userClient\.auth\.getUser\(\)/);
+  assert.match(route, /userClient[\s\S]*?from\("document"\)/);
   assert.match(route, /document\.status !== "available"/);
   assert.match(route, /SIGNED_URL_SECONDS = 300/);
-  assert.match(route, /createSignedUrl/);
+  assert.match(route, /createSupabaseAdminClient/);
+  assert.match(route, /admin\.storage[\s\S]*?createSignedUrl/);
+  assert.match(route, /status: 503/);
   assert.match(route, /Cache-Control.*no-store/);
+  assert.doesNotMatch(route, /userClient\.storage[\s\S]*?createSignedUrl/);
 });
 
 test("admin Supabase key is server-only and not exposed as NEXT_PUBLIC", async () => {

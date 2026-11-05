@@ -57,3 +57,14 @@ test("person creation rejects repeated identical owner records and locks rapid r
   assert.ok(workspace.includes('if(savingPersonRef.current) return;'));
   assert.ok(workspace.includes('disabled={savingPerson}'));
 });
+
+test("existing-case participant linking requires the case owner and a known person", async () => {
+ const route=await read("../src/app/api/processos/[caseId]/participantes/route.ts");
+ const workspace=await read("../src/features/workspace/workspace.tsx");
+ assert.ok(route.includes('.eq("owner_user_id", auth.user.id)'));
+ assert.ok(route.includes('.eq("created_by_user_id", auth.user.id)'));
+ assert.ok(route.includes('legalCase.archived_at'));
+ assert.ok(route.includes('error?.code === "23505"'));
+ assert.ok(workspace.includes('linkExistingPerson'));
+ assert.ok(workspace.includes('Vincular pessoa cadastrada'));
+});

@@ -45,7 +45,7 @@ export async function GET(request:NextRequest) {
    if(declaredLength>6500000) continue;
    const bytes=await response.arrayBuffer();
    if(bytes.byteLength>6500000) continue;
-   const charset=/charset=([\\w-]+)/i.exec(type)?.[1]??"utf-8";
+   const charset=type.toLowerCase().split("charset=")[1]?.split(";")[0]?.trim()??"utf-8";
    let html:string;
    try{html=new TextDecoder(charset).decode(bytes);}
    catch{html=new TextDecoder("utf-8").decode(bytes);}

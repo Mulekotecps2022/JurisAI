@@ -40,7 +40,7 @@ export async function GET(request:NextRequest) {
    });
    if(!response.ok) continue;
    const type=response.headers.get("content-type")??"";
-   if(!/text\\/html/i.test(type)) continue;
+   if(!type.toLowerCase().includes("text/html")) continue;
    const declaredLength=Number(response.headers.get("content-length")??"0");
    if(declaredLength>6500000) continue;
    const bytes=await response.arrayBuffer();

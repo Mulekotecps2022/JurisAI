@@ -122,10 +122,10 @@ test("official legislation retrieval is authenticated, allowlisted, bounded and 
  assert.ok(route.includes("SUPPORTED_LAWS[law]"));
  assert.ok(route.includes('redirect:"error"'));
  assert.ok(route.includes('cache:"no-store"'));
- assert.ok(route.includes("8500"));
- assert.ok(route.includes("4500000"));
+ assert.ok(route.includes("7500"));
+ assert.ok(route.includes("6500000"));
  assert.ok(route.includes("extractArticleExcerpt(html,article)"));
- assert.ok(route.includes("Nenhuma citação foi verificada."));
+ assert.ok(route.includes("Nenhuma citação foi gerada"));
  assert.ok(route.includes("retrievedAt:new Date().toISOString()"));
  assert.ok(parser.includes("www2.camara.leg.br/legin/fed/lei/2002/"));
  assert.ok(parser.includes("www2.camara.leg.br/legin/fed/lei/2015/"));
@@ -135,4 +135,16 @@ test("official legislation retrieval is authenticated, allowlisted, bounded and 
  assert.ok(page.includes("/api/legislacao/consultar?law="));
  assert.ok(page.includes("Texto recuperado da fonte oficial"));
  assert.ok(page.includes("Trecho abreviado"));
+});
+
+test("official Senate fallback is restricted to fixed legal texts and does not invent citations", async () => {
+ const route=await read("../src/app/api/legislacao/consultar/route.ts");
+ const sources=await read("../src/features/assistant/legislation-lookup.ts");
+ assert.ok(sources.includes("https://legis.senado.leg.br/norma/552282/publicacao/34620807"));
+ assert.ok(sources.includes("https://legis.senado.leg.br/norma/584917/publicacao/34619046"));
+ assert.ok(route.includes("source.secondaryUrl"));
+ assert.ok(route.includes('redirect:"error"'));
+ assert.ok(route.includes("if(!response.ok) continue"));
+ assert.ok(route.includes("if(!result) continue"));
+ assert.ok(route.includes("verifiedFetch:true"));
 });

@@ -68,3 +68,20 @@ test("existing-case participant linking requires the case owner and a known pers
  assert.ok(workspace.includes('linkExistingPerson'));
  assert.ok(workspace.includes('Vincular pessoa cadastrada'));
 });
+
+test("AI assistant remains disabled without explicit verified free plan and server-side key", async () => {
+ const api=await read("../src/app/api/assistente/route.ts");
+ const home=await read("../src/app/page.tsx");
+ const middleware=await read("../src/lib/supabase/middleware.ts");
+ assert.match(api, /GROQ_FREE_PLAN_CONFIRMED === "true"/);
+ assert.match(api, /process\.env\.GROQ_API_KEY/);
+ assert.match(api, /if \(!isReady\(\)\) return json\(/);
+ assert.match(api, /auth\.getUser\(\)/);
+ assert.match(api, /try_consume_ai_free_request/);
+ assert.match(api, /max_completion_tokens: 700/);
+ assert.match(api, /response\.status === 429/);
+ assert.match(api, /https:\/\/api\.groq\.com\/openai\/v1\/chat\/completions/);
+ assert.match(middleware, /pathname === "\/assistente"/);
+ assert.match(home, /href: "\/assistente"/);
+ assert.doesNotMatch(api, /NEXT_PUBLIC_GROQ_API_KEY/);
+});

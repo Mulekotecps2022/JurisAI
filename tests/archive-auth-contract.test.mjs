@@ -25,3 +25,12 @@ test("preview login uses one canonical callback origin", async () => {
   assert.match(login, /emailRedirectTo: callbackUrl\.toString\(\)/);
   assert.match(login, /shouldCreateUser: false/);
 });
+
+test("email confirmation supports token-hash links without a PKCE browser verifier", async () => {
+  const callback = await read("../src/app/auth/confirm/route.ts");
+  assert.match(callback, /searchParams\.get\("token_hash"\)/);
+  assert.match(callback, /tokenType !== "email"/);
+  assert.match(callback, /auth\.verifyOtp\(\{ token_hash: tokenHash!, type: "email" \}\)/);
+  assert.match(callback, /auth\.exchangeCodeForSession\(code\)/);
+  assert.match(callback, /candidateUrl\.origin === appUrl\.origin/);
+});

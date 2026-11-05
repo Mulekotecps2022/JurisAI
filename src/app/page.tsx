@@ -5,7 +5,7 @@ const modules = [
   { title: "Clientes e partes", description: "Cadastro estruturado de clientes e partes relacionadas.", status: "Conectado ao Supabase", href: "/gestao" },
   { title: "Documentos", description: "Biblioteca documental, classificação e acompanhamento da análise.", status: "Consulta protegida · upload suspenso", href: "/documentos" },
   { title: "Pesquisa jurídica", description: "Pesquisa com fontes oficiais e referências verificáveis.", status: "Planejado" },
-  { title: "Assistente jurídico", description: "Apoio à análise, elaboração e revisão de documentos.", status: "Planejado" },
+  { title: "Assistente jurídico", description: "Perguntas e rascunhos com IA: integração gratuita preparada, sem enviar dados de processos.", status: "Aguardando chave gratuita", href: "/assistente" },
   { title: "Auditoria e segurança", description: "Permissões, histórico de ações e proteção de dados.", status: "Em validação" }
 ];
 

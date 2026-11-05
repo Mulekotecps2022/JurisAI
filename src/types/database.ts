@@ -291,6 +291,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      try_consume_ai_free_request: { Args: never; Returns: boolean }
       can_access_case: { Args: { p_case_id: string }; Returns: boolean }
       can_access_tenente: { Args: { p_tenente_id: string }; Returns: boolean }
       can_edit_case: { Args: { p_case_id: string }; Returns: boolean }

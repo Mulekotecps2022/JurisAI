@@ -19,7 +19,7 @@ export async function GET() {
 
   const { data: cases, error } = await supabase
     .from("case")
-    .select("id, title, description, created_at")
+    .select("id, title, description, created_at, archived_at")
     .order("created_at", { ascending: false });
 
   if (error) return errorResponse("Não foi possível carregar os processos autorizados.", 500);
@@ -60,7 +60,8 @@ export async function GET() {
       title: item.title,
       description: item.description ?? "",
       participants: grouped.get(item.id) ?? [],
-      createdAt: item.created_at.slice(0, 10)
+      createdAt: item.created_at.slice(0, 10),
+      archivedAt: item.archived_at
     }))
   }, { headers: { "Cache-Control": "no-store" } });
 }
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
       title: parsed.data.title,
       description: parsed.data.description || null
     })
-    .select("id, title, description, created_at")
+    .select("id, title, description, created_at, archived_at")
     .single();
 
   if (error || !item) {
@@ -121,7 +122,8 @@ export async function POST(request: Request) {
         personId: participant.personId,
         role: participant.role
       })),
-      createdAt: item.created_at.slice(0, 10)
+      createdAt: item.created_at.slice(0, 10),
+      archivedAt: item.archived_at
     },
     warning: participantWarning
   }, { status: 201, headers: { "Cache-Control": "no-store" } });

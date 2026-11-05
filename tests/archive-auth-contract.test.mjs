@@ -45,3 +45,15 @@ test("email OTP form verifies eight-digit codes without creating public users", 
   assert.ok(login.includes("shouldCreateUser: false"));
   assert.ok(login.includes("window.location.assign(safeNext)"));
 });
+
+
+test("person creation rejects repeated identical owner records and locks rapid resubmission", async () => {
+  const route = await read("../src/app/api/pessoas/route.ts");
+  const workspace = await read("../src/features/workspace/workspace.tsx");
+  assert.ok(route.includes('.eq("created_by_user_id", user.id)'));
+  assert.ok(route.includes('.eq("name", parsed.data.name)'));
+  assert.ok(route.includes('if (isDuplicate) return errorResponse('));
+  assert.ok(route.includes('409)'));
+  assert.ok(workspace.includes('if(savingPersonRef.current) return;'));
+  assert.ok(workspace.includes('disabled={savingPerson}'));
+});

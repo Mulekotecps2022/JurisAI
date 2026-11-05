@@ -19,6 +19,9 @@ function authErrorMessage(code: string | null) {
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [emailRequested, setEmailRequested] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -66,7 +69,8 @@ export default function LoginPage() {
         throw new Error("EMAIL_REQUEST_FAILED");
       }
 
-      setMessage("Se o endereço estiver cadastrado e autorizado, você receberá um link seguro de acesso.");
+      setEmailRequested(true);
+      setMessage("Se o endereço estiver cadastrado, você receberá uma mensagem de acesso. O código numérico só estará disponível quando o modelo de e-mail do Supabase for configurado para incluí-lo.");
     } catch (cause) {
       const reason = cause instanceof Error ? cause.message : "";
       if (reason === "EMAIL_RATE_LIMIT") {
@@ -78,6 +82,38 @@ export default function LoginPage() {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!/^\\d{6}$/.test(otp)) {
+      setError("Informe os seis dígitos do código recebido por e-mail.");
+      return;
+    }
+    setVerifying(true);
+    setError("");
+    setMessage("");
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { error: otpError } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otp,
+        type: "email"
+      });
+      if (otpError) {
+        setError("Código inválido ou expirado. Confira a mensagem mais recente.");
+        return;
+      }
+      const requestedNext = new URLSearchParams(window.location.search).get("next");
+      const safeNext = requestedNext?.startsWith("/") && !requestedNext.startsWith("//")
+        ? requestedNext : "/";
+      // OTP verification persists the authenticated browser session before navigation.
+      window.location.assign(safeNext);
+    } catch {
+      setError("Não foi possível confirmar o código neste momento.");
+    } finally {
+      setVerifying(false);
     }
   }
 
@@ -117,6 +153,37 @@ export default function LoginPage() {
             {loading ? "Enviando..." : "Enviar link de acesso"}
           </button>
         </form>
+
+        {emailRequested && (
+          <form className="mt-5 space-y-3 border-t border-slate-200 pt-5" onSubmit={handleVerifyOtp}>
+            <label htmlFor="email-otp" className="block text-sm font-medium text-slate-700">
+              Código de seis dígitos (quando disponível no e-mail)
+            </label>
+            <input
+              id="email-otp"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              required
+              value={otp}
+              onChange={(event) => setOtp(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+              placeholder="000000"
+              className="w-full rounded-lg border border-slate-300 px-3 py-3 text-center text-lg tracking-[0.25em]"
+            />
+            <button
+              type="submit"
+              disabled={verifying || otp.length !== 6}
+              className="w-full rounded-lg bg-juris-navy px-4 py-3 font-semibold text-white disabled:opacity-50"
+            >
+              {verifying ? "Confirmando..." : "Confirmar código"}
+            </button>
+            <p className="text-xs leading-5 text-slate-500">
+              Se o e-mail trouxer apenas um link, a configuração de envio de códigos ainda não está habilitada.
+            </p>
+          </form>
+        )}
 
         {message && (
           <p role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">

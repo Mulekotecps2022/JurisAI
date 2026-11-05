@@ -6,11 +6,13 @@ export const SUPPORTED_LAWS = {
   cc: {
     label: "Código Civil (Lei nº 10.406/2002)",
     url: "https://www2.camara.leg.br/legin/fed/lei/2002/lei-10406-10-janeiro-2002-432893-normaatualizada-pl.html",
+    secondaryUrl: "https://legis.senado.leg.br/norma/552282/publicacao/34620807",
     maxArticle: 2046
   },
   cpc: {
     label: "Código de Processo Civil (Lei nº 13.105/2015)",
     url: "https://www2.camara.leg.br/legin/fed/lei/2015/lei-13105-16-marco-2015-780273-normaatualizada-pl.html",
+    secondaryUrl: "https://legis.senado.leg.br/norma/584917/publicacao/34619046",
     maxArticle: 1072
   }
 } as const;

@@ -54,7 +54,7 @@ export default function LegalAssistantPage() {
    </div>
    <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700">
     <strong>Status da IA:</strong> {status==="loading"?"Verificando configuração...":status==="ready"?"Conexão gratuita habilitada, até 8 solicitações por usuário ao dia.":status==="unconfigured"?"Aguardando configuração de uma conta gratuita verificada. Nenhum envio externo está habilitado.":"Não foi possível verificar o serviço."}
-    <p className="mt-2 text-xs text-slate-500">Respostas podem conter erros. Confira leis, precedentes e prazos em fontes oficiais antes de usar profissionalmente.</p>
+    <p className="mt-2 text-sm font-semibold text-red-800">AVISO: o modelo pode inventar prazos, artigos e precedentes mesmo quando responde com convicção. Não use respostas como fundamento de petições, cálculo de prazos ou orientação a clientes sem verificação jurídica independente.</p><p className="mt-2 text-xs text-slate-500">A IA não consulta legislação atualizada nesta versão. Confira cada referência em fontes oficiais.</p>
    </div>
    {messages.length>0&&<section aria-label="Conversa" className="mt-5 space-y-3">{messages.map((item,index)=><article key={index} className={item.role==="user"?"rounded-xl bg-slate-100 p-4":"rounded-xl border border-teal-200 bg-white p-4"}><p className="mb-2 text-xs font-bold uppercase tracking-wide text-teal-700">{item.role==="user"?"Sua pergunta":"Assistente · resposta gerada por IA"}</p><div className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-800">{item.content}</div></article>)}</section>}
    {error&&<p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}

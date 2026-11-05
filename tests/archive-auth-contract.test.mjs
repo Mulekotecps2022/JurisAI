@@ -34,3 +34,13 @@ test("email confirmation supports token-hash links without a PKCE browser verifi
   assert.match(callback, /auth\.exchangeCodeForSession\(code\)/);
   assert.match(callback, /candidateUrl\.origin === appUrl\.origin/);
 });
+
+test("email OTP form verifies six-digit codes without creating public users", async () => {
+  const login = await read("../src/app/login/page.tsx");
+  assert.match(login, /auth\\.verifyOtp\\(\\{/);
+  assert.match(login, /token: otp/);
+  assert.match(login, /type: "email"/);
+  assert.match(login, /\\^\\\\d\\{6\\}\\$/);
+  assert.match(login, /shouldCreateUser: false/);
+  assert.match(login, /window\\.location\\.assign\\(safeNext\\)/);
+});

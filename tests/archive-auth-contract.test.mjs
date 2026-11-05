@@ -35,12 +35,13 @@ test("email confirmation supports token-hash links without a PKCE browser verifi
   assert.match(callback, /candidateUrl\.origin === appUrl\.origin/);
 });
 
-test("email OTP form verifies six-digit codes without creating public users", async () => {
+test("email OTP form verifies eight-digit codes without creating public users", async () => {
   const login = await read("../src/app/login/page.tsx");
   assert.ok(login.includes("auth.verifyOtp({"));
   assert.ok(login.includes("token: otp"));
   assert.ok(login.includes('type: "email"'));
-  assert.ok(login.includes("otp.length !== 6"));
+  assert.ok(login.includes("otp.length !== 8"));
+  assert.ok(login.includes("pattern=\"[0-9]{8}\""));
   assert.ok(login.includes("shouldCreateUser: false"));
   assert.ok(login.includes("window.location.assign(safeNext)"));
 });

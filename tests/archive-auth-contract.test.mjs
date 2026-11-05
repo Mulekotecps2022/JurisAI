@@ -85,3 +85,14 @@ test("AI assistant remains disabled without explicit verified free plan and serv
  assert.match(home, /href: "\/assistente"/);
  assert.doesNotMatch(api, /NEXT_PUBLIC_GROQ_API_KEY/);
 });
+
+
+test("AI legal answers explicitly avoid fabricated deadlines and warn about hallucinations", async () => {
+ const api=await read("../src/app/api/assistente/route.ts");
+ const page=await read("../src/app/assistente/page.tsx");
+ assert.ok(api.includes("prescrição atinge a pretensão"));
+ assert.ok(api.includes("decadência legal não se suspende nem se interrompe"));
+ assert.ok(api.includes("não invente prazo universal"));
+ assert.ok(api.includes("não afirme ter verificado legislação ou precedentes"));
+ assert.ok(page.includes("pode inventar prazos, artigos e precedentes"));
+});

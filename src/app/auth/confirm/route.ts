@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
   }
 
   const code = request.nextUrl.searchParams.get("code");
+  const tokenHash = request.nextUrl.searchParams.get("token_hash");
+  const tokenType = request.nextUrl.searchParams.get("type");
   const requestedNext = request.nextUrl.searchParams.get("next") ?? "/";
   const candidateUrl = new URL(requestedNext, appUrl);
   const safeNextUrl =
@@ -26,13 +28,17 @@ export async function GET(request: NextRequest) {
       ? candidateUrl
       : new URL("/", appUrl);
 
-  if (!code) {
+  // Existing PKCE links remain supported. Token-hash links can be verified
+  // without requiring the initiating browser's PKCE code verifier.
+  if (!code && (!tokenHash || tokenType !== "email")) {
     return NextResponse.redirect(new URL("/login?error=missing_code", appUrl));
   }
 
   try {
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { error } = code
+      ? await supabase.auth.exchangeCodeForSession(code)
+      : await supabase.auth.verifyOtp({ token_hash: tokenHash!, type: "email" });
 
     if (error) {
       return NextResponse.redirect(new URL("/login?error=invalid_code", appUrl));

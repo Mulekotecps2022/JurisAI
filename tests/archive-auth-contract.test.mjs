@@ -96,3 +96,19 @@ test("AI legal answers explicitly avoid fabricated deadlines and warn about hall
  assert.ok(api.includes("não afirme ter verificado legislação ou precedentes"));
  assert.ok(page.includes("pode inventar prazos, artigos e precedentes"));
 });
+
+test("AI official legal sources have whitelisted government and court URLs", async () => {
+ const catalog=await read("../src/features/assistant/official-sources.ts");
+ const api=await read("../src/app/api/assistente/route.ts");
+ const ui=await read("../src/app/assistente/page.tsx");
+ assert.ok(catalog.includes("OFFICIAL_LEGAL_SOURCES"));
+ assert.ok(catalog.includes("selectOfficialSources"));
+ assert.ok(catalog.includes("https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm"));
+ assert.ok(catalog.includes("https://jurisprudencia.stf.jus.br/"));
+ assert.ok(catalog.includes("https://www.stj.jus.br/sites/portalp/"));
+ assert.ok(api.includes('sourceStatus: "official_links_not_live_verified"'));
+ assert.ok(api.includes("estas páginas não foram abertas nem lidas"));
+ assert.ok(ui.includes("Biblioteca de fontes jurídicas oficiais"));
+ assert.ok(ui.includes("não citações verificadas"));
+ assert.ok(ui.includes('rel="noopener noreferrer"'));
+});

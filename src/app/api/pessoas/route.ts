@@ -53,6 +53,24 @@ export async function POST(request: Request) {
     return errorResponse(parsed.error.issues[0]?.message ?? "Confira os dados informados.", 400);
   }
 
+  // Prevent accidental repeats for the same creator and identical details.
+  // Names alone are not unique: different clients may legitimately share a name.
+  const { data: existing, error: lookupError } = await supabase
+    .from("tenentes")
+    .select("id, email, phone, notes")
+    .eq("created_by_user_id", user.id)
+    .eq("name", parsed.data.name)
+    .eq("kind", parsed.data.kind);
+
+  if (lookupError) return errorResponse("Não foi possível verificar cadastros existentes. Tente novamente mais tarde.", 500);
+  const normalized = (value: string | null | undefined) => (value ?? "").trim();
+  const isDuplicate = (existing ?? []).some((person) =>
+    normalized(person.email).toLowerCase() === normalized(parsed.data.email).toLowerCase() &&
+    normalized(person.phone) === normalized(parsed.data.phone) &&
+    normalized(person.notes) === normalized(parsed.data.notes)
+  );
+  if (isDuplicate) return errorResponse("Este cadastro já existe. Confira a lista antes de cadastrar novamente.", 409);
+
   const { data, error } = await supabase
     .from("tenentes")
     .insert({

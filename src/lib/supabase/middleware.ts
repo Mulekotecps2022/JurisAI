@@ -6,6 +6,8 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/administracao/") ||
     pathname === "/gestao" ||
     pathname.startsWith("/gestao/") ||
+    pathname === "/assistente" ||
+    pathname.startsWith("/assistente/") ||
     pathname === "/documentos" ||
     pathname.startsWith("/documentos/");
 }

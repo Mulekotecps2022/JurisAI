@@ -112,3 +112,27 @@ test("AI official legal sources have whitelisted government and court URLs", asy
  assert.ok(ui.includes("não citações verificadas"));
  assert.ok(ui.includes('rel="noopener noreferrer"'));
 });
+
+test("official legislation retrieval is authenticated, allowlisted, bounded and fail closed", async () => {
+ const route=await read("../src/app/api/legislacao/consultar/route.ts");
+ const parser=await read("../src/features/assistant/legislation-lookup.ts");
+ const page=await read("../src/app/assistente/page.tsx");
+ assert.ok(route.includes("supabase.auth.getUser()"));
+ assert.ok(route.includes('z.enum(["cc","cpc"])'));
+ assert.ok(route.includes("SUPPORTED_LAWS[law]"));
+ assert.ok(route.includes('redirect:"error"'));
+ assert.ok(route.includes('cache:"no-store"'));
+ assert.ok(route.includes("8500"));
+ assert.ok(route.includes("4500000"));
+ assert.ok(route.includes("extractArticleExcerpt(html,article)"));
+ assert.ok(route.includes("Nenhuma citação foi verificada."));
+ assert.ok(route.includes("retrievedAt:new Date().toISOString()"));
+ assert.ok(parser.includes("www2.camara.leg.br/legin/fed/lei/2002/"));
+ assert.ok(parser.includes("www2.camara.leg.br/legin/fed/lei/2015/"));
+ assert.ok(parser.includes("htmlToLegalLines"));
+ assert.ok(parser.includes("extractArticleExcerpt"));
+ assert.ok(page.includes("Consulta direta à legislação oficial"));
+ assert.ok(page.includes("/api/legislacao/consultar?law="));
+ assert.ok(page.includes("Texto recuperado da fonte oficial"));
+ assert.ok(page.includes("Trecho abreviado"));
+});

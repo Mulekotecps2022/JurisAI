@@ -5,9 +5,9 @@ import Link from "next/link";
 import { participantRoleLabels, personKindLabels, personInputSchema, type ParticipantRole, type PersonKind } from "@/features/participants/domain";
 import { caseInputSchema } from "@/features/cases/domain";
 
-type Person = { id:string; name:string; kind:PersonKind; email:string; phone:string; notes:string; createdAt:string; archivedAt:string|null };
+type Person = { id:string; name:string; kind:PersonKind; email:string; phone:string; notes:string; createdAt:string };
 type Participant = { personId:string; role:ParticipantRole };
-type LegalCase = { id:string; title:string; description:string; participants:Participant[]; createdAt:string };
+type LegalCase = { id:string; title:string; description:string; participants:Participant[]; createdAt:string; archivedAt:string|null };
 
 const field = "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-100";
 const primary = "rounded-lg bg-juris-navy px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800";

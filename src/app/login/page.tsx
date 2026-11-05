@@ -70,7 +70,7 @@ export default function LoginPage() {
       }
 
       setEmailRequested(true);
-      setMessage("Se o endereço estiver cadastrado, você receberá uma mensagem de acesso. O código numérico só estará disponível quando o modelo de e-mail do Supabase for configurado para incluí-lo.");
+      setMessage("Se o endereço estiver cadastrado, você receberá uma mensagem de acesso. Digite o código de oito dígitos recebido no e-mail abaixo.");
     } catch (cause) {
       const reason = cause instanceof Error ? cause.message : "";
       if (reason === "EMAIL_RATE_LIMIT") {
@@ -87,8 +87,8 @@ export default function LoginPage() {
 
   async function handleVerifyOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!/^\\d{6}$/.test(otp)) {
-      setError("Informe os seis dígitos do código recebido por e-mail.");
+    if (!/^\d{8}$/.test(otp)) {
+      setError("Informe os oito dígitos do código recebido por e-mail.");
       return;
     }
     setVerifying(true);
@@ -154,33 +154,33 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {emailRequested && (
+        {email.trim() && (
           <form className="mt-5 space-y-3 border-t border-slate-200 pt-5" onSubmit={handleVerifyOtp}>
             <label htmlFor="email-otp" className="block text-sm font-medium text-slate-700">
-              Código de seis dígitos (quando disponível no e-mail)
+              Código de oito dígitos recebido por e-mail
             </label>
             <input
               id="email-otp"
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength={6}
+              pattern="[0-9]{8}"
+              maxLength={8}
               required
               value={otp}
-              onChange={(event) => setOtp(event.target.value.replace(/\\D/g, "").slice(0, 6))}
-              placeholder="000000"
+              onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 8))}
+              placeholder="00000000"
               className="w-full rounded-lg border border-slate-300 px-3 py-3 text-center text-lg tracking-[0.25em]"
             />
             <button
               type="submit"
-              disabled={verifying || otp.length !== 6}
+              disabled={verifying || otp.length !== 8}
               className="w-full rounded-lg bg-juris-navy px-4 py-3 font-semibold text-white disabled:opacity-50"
             >
               {verifying ? "Confirmando..." : "Confirmar código"}
             </button>
             <p className="text-xs leading-5 text-slate-500">
-              Se o e-mail trouxer apenas um link, a configuração de envio de códigos ainda não está habilitada.
+              Use apenas o código mais recente. Não compartilhe seu código de acesso.
             </p>
           </form>
         )}

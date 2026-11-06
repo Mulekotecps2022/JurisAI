@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { canSignDocumentDownload } from "@/features/documents/download-policy";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -42,11 +43,7 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Documento não encontrado ou sem acesso." }, { status: 404 });
   }
 
-  if (
-    document.status !== "available" ||
-    document.storage_bucket !== "case-documents" ||
-    !document.storage_path
-  ) {
+  if (!canSignDocumentDownload(document)) {
     return NextResponse.json(
       { error: "Documento ainda está em quarentena ou não está disponível para download." },
       { status: 423, headers: { "Cache-Control": "no-store" } }

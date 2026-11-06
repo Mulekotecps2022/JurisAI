@@ -75,10 +75,24 @@ jobs:
       - name: Test queue migration against ephemeral PostgreSQL
         run: |
           docker run -d --name jurisai-test-postgres -e POSTGRES_PASSWORD=local-ci-only postgres:16-alpine
-          for i in $(seq 1 40); do
-            if docker exec jurisai-test-postgres pg_isready -U postgres >/dev/null 2>&1; then break; fi
-            sleep 1
+          postgres_ready=0
+          for i in $(seq 1 60); do
+            if docker exec jurisai-test-postgres pg_isready -U postgres -d postgres >/dev/null 2>&1; then
+              postgres_ready=1
+              break
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' jurisai-test-postgres)" != "true" ]; then
+              docker logs jurisai-test-postgres --tail 80
+              echo "PostgreSQL container exited before becoming ready"
+              exit 1
+            fi
+            sleep 2
           done
+          if [ "$postgres_ready" -ne 1 ]; then
+            docker logs jurisai-test-postgres --tail 80
+            echo "PostgreSQL did not become ready within 120 seconds"
+            exit 1
+          fi
           docker exec jurisai-test-postgres mkdir -p /work/supabase/migrations
           docker cp supabase/migrations/20261105_document_scan_queue_draft.sql jurisai-test-postgres:/work/supabase/migrations/
           docker cp tests/document-scan-postgres.sql jurisai-test-postgres:/work/document-scan-postgres.sql

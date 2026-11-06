@@ -9,6 +9,7 @@ on:
       - 'tests/clamav-gateway.test.mjs'
       - 'tests/document-scan-flow.test.mjs'
       - 'tests/document-scan-queue.test.mjs'
+      - 'tests/document-scan-worker-http.test.mjs'
       - 'tests/document-scan-postgres.sql'
       - 'tests/document-scan-postgres-advanced.sql'
       - 'tests/document-scan-postgres-integration.sql'
@@ -64,7 +65,7 @@ jobs:
             sleep 1
           done
           curl --fail-with-body --silent --show-error --max-time 3 -X POST http://127.0.0.1:8788/scan -o /dev/null -w "Gateway HTTP status: %{http_code}\\n" || true
-          node --test tests/clamav-gateway.test.mjs tests/document-scan-flow.test.mjs tests/document-scan-queue.test.mjs
+          NODE_ENV=test node --test tests/clamav-gateway.test.mjs tests/document-scan-flow.test.mjs tests/document-scan-queue.test.mjs tests/document-scan-worker-http.test.mjs
       - name: Test queue migration against ephemeral PostgreSQL
         run: |
           docker run -d --name jurisai-test-postgres -e POSTGRES_PASSWORD=local-ci-only postgres:16-alpine

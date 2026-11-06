@@ -28,7 +28,13 @@ export async function GET(_request: Request, context: RouteContext) {
   } catch {
     return NextResponse.json({ error: "Serviço de autenticação indisponível." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
-  const { data: authData, error: authError } = await userClient.auth.getUser();
+  let authData: Awaited<ReturnType<typeof userClient.auth.getUser>>["data"];
+  let authError: Awaited<ReturnType<typeof userClient.auth.getUser>>["error"];
+  try {
+    ({ data: authData, error: authError } = await userClient.auth.getUser());
+  } catch {
+    return NextResponse.json({ error: "Serviço de autenticação indisponível." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
   if (authError || !authData.user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }

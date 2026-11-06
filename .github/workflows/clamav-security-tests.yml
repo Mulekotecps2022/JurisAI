@@ -10,6 +10,8 @@ on:
       - 'tests/document-scan-flow.test.mjs'
       - 'tests/document-scan-queue.test.mjs'
       - 'tests/document-scan-postgres.sql'
+      - 'tests/document-scan-postgres-advanced.sql'
+      - 'tests/document-scan-postgres-concurrency.sh'
       - 'services/document-scan-worker/**'
       - 'src/app/api/internal/documents/scan/**'
       - 'src/app/api/documentos/upload/**'
@@ -72,7 +74,10 @@ jobs:
           docker exec jurisai-test-postgres mkdir -p /work/supabase/migrations
           docker cp supabase/migrations/20261105_document_scan_queue_draft.sql jurisai-test-postgres:/work/supabase/migrations/
           docker cp tests/document-scan-postgres.sql jurisai-test-postgres:/work/document-scan-postgres.sql
+          docker cp tests/document-scan-postgres-advanced.sql jurisai-test-postgres:/work/document-scan-postgres-advanced.sql
           docker exec -w /work jurisai-test-postgres psql -v ON_ERROR_STOP=1 -U postgres -d postgres -f document-scan-postgres.sql
+          docker exec -w /work jurisai-test-postgres psql -v ON_ERROR_STOP=1 -U postgres -d postgres -f document-scan-postgres-advanced.sql
+          bash tests/document-scan-postgres-concurrency.sh
       - name: Stop isolated resources
         if: always()
         run: |

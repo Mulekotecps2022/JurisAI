@@ -8,6 +8,11 @@ on:
       - 'services/clamav-gateway/**'
       - 'tests/clamav-gateway.test.mjs'
       - 'tests/document-scan-flow.test.mjs'
+      - 'tests/document-scan-queue.test.mjs'
+      - 'services/document-scan-worker/**'
+      - 'src/app/api/internal/documents/scan/**'
+      - 'src/app/api/documentos/upload/**'
+      - 'supabase/migrations/20261105_document_scan_queue_draft.sql'
 
 permissions:
   contents: read
@@ -55,7 +60,7 @@ jobs:
             sleep 1
           done
           curl --fail-with-body --silent --show-error --max-time 3 -X POST http://127.0.0.1:8788/scan -o /dev/null -w "Gateway HTTP status: %{http_code}\\n" || true
-          node --test tests/clamav-gateway.test.mjs tests/document-scan-flow.test.mjs
+          node --test tests/clamav-gateway.test.mjs tests/document-scan-flow.test.mjs tests/document-scan-queue.test.mjs
       - name: Stop isolated resources
         if: always()
         run: |

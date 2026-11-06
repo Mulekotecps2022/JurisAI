@@ -21,7 +21,12 @@ export async function GET(_request: Request, context: RouteContext) {
 
   // The user's session is the authorization boundary. The RLS-protected
   // metadata query must succeed before the privileged Storage client is used.
-  const userClient = await createSupabaseServerClient();
+  let userClient: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  try {
+    userClient = await createSupabaseServerClient();
+  } catch {
+    return NextResponse.json({ error: "Serviço de autenticação indisponível." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
   const { data: authData, error: authError } = await userClient.auth.getUser();
   if (authError || !authData.user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });

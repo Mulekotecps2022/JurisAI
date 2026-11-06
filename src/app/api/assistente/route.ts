@@ -69,7 +69,11 @@ export async function POST(request: NextRequest) {
         },
         body: JSON.stringify({
           model: "openai/gpt-oss-20b",
-          max_completion_tokens: 700,
+          // GPT-OSS counts its internal reasoning within the completion budget.
+          // Low effort and bounded output avoid successful HTTP responses with empty text.
+          max_completion_tokens: 1500,
+          reasoning_effort: "low",
+          include_reasoning: false,
           temperature: 0.3,
           stream: false,
           messages: [
@@ -88,9 +92,22 @@ export async function POST(request: NextRequest) {
     if (response.status === 429) return json("Cota gratuita do provedor esgotada. Não haverá cobrança automática.", 429);
     if (!response.ok) return json("O provedor gratuito não conseguiu responder. Confira se o plano gratuito continua disponível.", 502);
     const result: unknown = await response.json();
-    const answer = (result as { choices?: Array<{ message?: { content?: unknown } }> }).choices?.[0]?.message?.content;
-    if (typeof answer !== "string" || !answer.trim()) return json("O provedor retornou uma resposta vazia.", 502);
-    return NextResponse.json({ answer: answer.slice(0,6000), sources: officialSources, verifiedLaw, sourceStatus: verifiedLaw ? "official_article_retrieved" : "official_links_not_live_verified" }, { headers: { "Cache-Control": "no-store" } });
+    const completion = (result as { choices?: Array<{ message?: { content?: unknown }; finish_reason?: string }> }).choices?.[0];
+    const answer = completion?.message?.content;
+    if (typeof answer !== "string" || !answer.trim()) {
+      // Do not silently retry: that would burn a second free request.
+      if (verifiedLaw) {
+        return NextResponse.json({
+          answer: "O provedor não conseguiu gerar uma explicação nesta tentativa. O texto legal recuperado da publicação oficial está disponível abaixo. Nenhuma interpretação foi gerada pela IA.",
+          sources: officialSources, verifiedLaw, modelStatus: "official_text_only",
+          sourceStatus: "official_article_retrieved"
+        }, { headers: { "Cache-Control": "no-store" } });
+      }
+      return json(completion?.finish_reason === "length"
+        ? "O modelo utilizou o limite de tokens antes de produzir uma resposta. Nenhuma nova chamada foi feita."
+        : "O provedor não gerou texto nesta tentativa. Nenhuma nova chamada foi feita.", 502);
+    }
+    return NextResponse.json({ answer: answer.slice(0,6000), sources: officialSources, verifiedLaw, sourceStatus: verifiedLaw ? "official_article_retrieved" : "official_links_not_live_verified", modelStatus: "generated" }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     // Never log prompts, secret tokens or provider response bodies.
     return json("Não foi possível consultar o provedor gratuito. Tente mais tarde.", 502);

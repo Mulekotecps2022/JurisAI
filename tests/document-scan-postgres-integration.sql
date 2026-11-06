@@ -19,8 +19,8 @@ begin
     select public.finish_document_scan_job(d,t,verdict,'ISOLATED_TEST') into ok;
     if ok is distinct from true then raise exception 'finish failed for %',verdict; end if;
     select status into st from public.document where id=d;
-    if st <> case when verdict='clean' then 'available'
-      when verdict='retry' then 'quarantined' else 'rejected' end then
+    if st <> (case when verdict='clean' then 'available'
+      when verdict='retry' then 'quarantined' else 'rejected' end) then
       raise exception 'wrong document state for %: %',verdict,st;
     end if;
     select public.finish_document_scan_job(d,t,'clean') into ok;

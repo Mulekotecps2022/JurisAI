@@ -10,5 +10,7 @@ export function canSignDocumentDownload(document: {
   return document.status === "available" &&
     document.storage_bucket === "case-documents" &&
     typeof document.storage_path === "string" &&
-    document.storage_path.length > 0;
+    document.storage_path.trim().length > 0 &&
+    !document.storage_path.startsWith("/") &&
+    !document.storage_path.split("/").some((segment) => segment === "." || segment === "..");
 }

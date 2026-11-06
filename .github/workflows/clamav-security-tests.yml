@@ -47,6 +47,13 @@ jobs:
         run: |
           node services/clamav-gateway/server.mjs &
           echo $! > /tmp/jurisai-scanner-gateway.pid
+          for i in $(seq 1 40); do
+            if curl --silent --output /dev/null --max-time 2 http://127.0.0.1:8788/scan; then break; fi
+            if curl --silent --output /dev/null --max-time 2 -X POST http://127.0.0.1:8788/scan; then break; fi
+            if ! kill -0 "$(cat /tmp/jurisai-scanner-gateway.pid)" 2>/dev/null; then echo "Gateway exited unexpectedly"; exit 1; fi
+            sleep 1
+          done
+          curl --fail-with-body --silent --show-error --max-time 3 -X POST http://127.0.0.1:8788/scan -o /dev/null -w "Gateway HTTP status: %{http_code}\\n" || true
           node --test tests/clamav-gateway.test.mjs
       - name: Stop isolated resources
         if: always()

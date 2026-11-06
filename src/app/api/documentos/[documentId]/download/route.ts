@@ -74,11 +74,20 @@ export async function GET(_request: Request, context: RouteContext) {
     );
   }
 
-  const { data: signed, error: signingError } = await admin.storage
-    .from("case-documents")
-    .createSignedUrl(document.storage_path, SIGNED_URL_SECONDS, {
-      download: document.file_name
-    });
+  let signed: { signedUrl: string } | null;
+  let signingError: unknown;
+  try {
+    ({ data: signed, error: signingError } = await admin.storage
+      .from("case-documents")
+      .createSignedUrl(document.storage_path, SIGNED_URL_SECONDS, {
+        download: document.file_name
+      }));
+  } catch {
+    return NextResponse.json(
+      { error: "Não foi possível autorizar o download." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
+    );
+  }
 
   if (signingError || !signed?.signedUrl) {
     return NextResponse.json(

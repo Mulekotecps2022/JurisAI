@@ -4,7 +4,7 @@ import { runOne } from "../services/document-scan-worker/worker.mjs";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const lease = "22222222-2222-4222-8222-222222222222";
-const endpoint = "http://127.0.0.1:8788/internal";
+const endpoint = "https://scanner.invalid/internal";
 const workerToken = "isolated-ci-token-0123456789-abcdefgh";
 function queue() {
   let state = "pending", attempts = 0, token = null, expiry = 0;
@@ -19,7 +19,7 @@ function queue() {
         audit.push(attempts >= 5 ? "dead" : "recovered");
       }
       if (state !== "pending") return { data: [], error: null };
-      state = "processing"; attempts++; token = lease; expiry = Date.now() + args.p_lease_seconds * 1000;
+      state = "processing"; attempts++; token = attempts === 1 ? lease : "33333333-3333-4333-8333-333333333333"; expiry = Date.now() + args.p_lease_seconds * 1000;
       audit.push("claimed");
       return { data: [{ document_id: id, lease_token: token }], error: null };
     },
@@ -53,6 +53,7 @@ test("expired lease recovers; stale verdict is refused", async () => {
   db.expire();
   await runOne({ ...config(db), fetchImpl: async () => ({ ok: true, status: 200 }) });
   assert.equal(db.attempts, 2);
+  assert.equal(db.finish(lease, "clean"), false);
   assert.equal(db.finish("incorrect-token", "clean"), false);
   assert.deepEqual(db.audit, ["claimed", "recovered", "claimed"]);
 });
@@ -70,7 +71,7 @@ test("audited clean, infected and retry decisions are guarded by lease", async (
   assert.equal(db.finish(lease, "retry"), true);
   assert.equal(db.finish(lease, "clean"), false);
   await runOne({ ...config(db), fetchImpl: async () => ({ ok: true, status: 200 }) });
-  assert.equal(db.finish(lease, "infected"), true);
+  assert.equal(db.finish("33333333-3333-4333-8333-333333333333", "infected"), true);
   assert.equal(db.state, "rejected");
   assert.deepEqual(db.audit, ["claimed", "retry", "claimed", "infected"]);
 });

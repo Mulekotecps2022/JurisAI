@@ -34,13 +34,13 @@ begin if new.document_id='33333333-3333-4333-8333-333333333333' then raise excep
 create trigger reject_test_audit before insert on public.document_scan_audit for each row execute function public.reject_test_audit();
 set role service_role;
 do $$
-declare n integer;
+declare n integer; did_fail boolean := false;
 begin
   begin
     perform public.enqueue_document_scan_job('33333333-3333-4333-8333-333333333333');
-    raise exception 'injected audit error not propagated';
-  exception when raise_exception then null;
+  exception when raise_exception then did_fail := true;
   end;
+  if not did_fail then raise exception 'injected audit error not propagated'; end if;
   select count(*) into n from public.document_scan_jobs where document_id='33333333-3333-4333-8333-333333333333';
   if n<>0 then raise exception 'non-atomic enqueue'; end if;
 end $$;

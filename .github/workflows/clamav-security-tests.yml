@@ -1,0 +1,50 @@
+name: ClamAV isolated security tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clamav-security-tests
+  cancel-in-progress: false
+
+jobs:
+  scanner-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      JURISAI_SCANNER_TOKEN: "ci-only-local-test-token-not-for-production-00001"
+      CLAMD_HOST: 127.0.0.1
+      CLAMD_PORT: "3310"
+      SCANNER_LISTEN_HOST: 127.0.0.1
+      SCANNER_LISTEN_PORT: "8788"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm upload remains disabled in CI
+        run: |
+          test "${JURISAI_ENABLE_UPLOADS:-}" != "true"
+      - name: Start ClamAV in isolated container
+        run: |
+          docker run -d --name jurisai-clamav --network host --memory 4g clamav/clamav:stable
+          for i in $(seq 1 90); do
+            if timeout 2 bash -c 'echo PING > /dev/tcp/127.0.0.1/3310' 2>/dev/null; then
+              if docker exec jurisai-clamav clamdscan --version >/dev/null 2>&1; then
+                echo "ClamAV port available"
+                break
+              fi
+            fi
+            sleep 5
+          done
+          docker logs jurisai-clamav --tail 30
+      - name: Start gateway and execute scanner tests
+        run: |
+          node services/clamav-gateway/server.mjs &
+          echo $! > /tmp/jurisai-scanner-gateway.pid
+          node --test tests/clamav-gateway.test.mjs
+      - name: Stop isolated resources
+        if: always()
+        run: |
+          if [ -f /tmp/jurisai-scanner-gateway.pid ]; then kill "$(cat /tmp/jurisai-scanner-gateway.pid)" || true; fi
+          docker rm -f jurisai-clamav || true

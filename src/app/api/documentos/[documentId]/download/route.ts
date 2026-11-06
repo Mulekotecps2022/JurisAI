@@ -39,11 +39,17 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
 
-  const { data: document, error } = await userClient
-    .from("document")
-    .select("id, file_name, status, storage_bucket, storage_path")
-    .eq("id", parsedId.data)
-    .maybeSingle();
+  let document: { file_name: string; status: string | null; storage_bucket: string | null; storage_path: string | null } | null;
+  let error: unknown;
+  try {
+    ({ data: document, error } = await userClient
+      .from("document")
+      .select("id, file_name, status, storage_bucket, storage_path")
+      .eq("id", parsedId.data)
+      .maybeSingle());
+  } catch {
+    return NextResponse.json({ error: "Não foi possível verificar o acesso ao documento." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
 
   if (error || !document) {
     return NextResponse.json({ error: "Documento não encontrado ou sem acesso." }, { status: 404 });

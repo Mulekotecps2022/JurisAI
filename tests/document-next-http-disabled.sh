@@ -28,4 +28,10 @@ check 503 -X POST "http://127.0.0.1:$PORT/api/documentos/upload"
 check 403 -X POST -H 'Sec-Fetch-Site: cross-site' "http://127.0.0.1:$PORT/api/documentos/upload"
 check 503 -X POST -H 'Origin: https://attacker.invalid' "http://127.0.0.1:$PORT/api/documentos/upload"
 check 503 -X POST -H 'Content-Type: application/json' --data '{"caseId":"11111111-1111-4111-8111-111111111111"}' "http://127.0.0.1:$PORT/api/documentos/upload"
-echo "PASS: actual Next.js upload route remains fail-closed over HTTP"
+# Internal scanner must fail closed without configured worker/scanner secrets.
+check 503 -X POST -H 'Content-Type: application/json' --data '{"documentId":"11111111-1111-4111-8111-111111111111","leaseToken":"22222222-2222-4222-8222-222222222222"}' "http://127.0.0.1:$PORT/api/internal/documents/scan"
+# Download must never redirect unauthenticated callers to Storage.
+check 401 "http://127.0.0.1:$PORT/api/documentos/11111111-1111-4111-8111-111111111111/download"
+check 404 "http://127.0.0.1:$PORT/api/documentos/not-a-uuid/download"
+check 401 "http://127.0.0.1:$PORT/api/documentos"
+echo "PASS: actual Next.js upload, internal scan and unauthenticated download routes fail closed over HTTP"

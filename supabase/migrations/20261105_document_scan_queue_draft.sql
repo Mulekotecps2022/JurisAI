@@ -48,14 +48,24 @@ begin
   end if;
   -- Recovery never releases a document: it remains quarantined or scanning
   -- and cannot be downloaded while awaiting another attempt.
-  update public.document_scan_jobs j set
+  with recovered as (
+    update public.document_scan_jobs j set
     state='pending', lease_until=null, lease_token=null,
     next_attempt_at=now(), updated_at=now(), last_error_code='LEASE_EXPIRED'
-  where j.state='processing' and j.lease_until < now() and j.attempts < 5;
-  update public.document_scan_jobs j set
+    where j.state='processing' and j.lease_until < now() and j.attempts < 5
+    returning j.document_id
+  )
+  insert into public.document_scan_audit(document_id,event,detail_code)
+    select document_id,'recovered','LEASE_EXPIRED' from recovered;
+  with exhausted as (
+    update public.document_scan_jobs j set
     state='dead', lease_until=null, lease_token=null,
     updated_at=now(), last_error_code='LEASE_EXHAUSTED'
-  where j.state='processing' and j.lease_until < now() and j.attempts >= 5;
+    where j.state='processing' and j.lease_until < now() and j.attempts >= 5
+    returning j.document_id
+  )
+  insert into public.document_scan_audit(document_id,event,detail_code)
+    select document_id,'dead','LEASE_EXHAUSTED' from exhausted;
   -- A single UPDATE with SKIP LOCKED makes the claim atomic.
   with candidate as (
     select j.document_id from public.document_scan_jobs j
@@ -129,3 +139,35 @@ begin
 end $$;
 revoke all on function public.finish_document_scan_job(uuid,uuid,text,text) from public,anon,authenticated;
 grant execute on function public.finish_document_scan_job(uuid,uuid,text,text) to service_role;
+
+-- Atomically queue and audit a fully stored, quarantined object.
+-- Called only after the upload endpoint has completed Storage upload and
+-- rechecked case permissions. Duplicate enqueues are rejected.
+create or replace function public.enqueue_document_scan_job(p_document_id uuid)
+returns boolean language plpgsql security invoker set search_path=''
+as $$
+declare v_document public.document%rowtype;
+begin
+  if current_user <> 'service_role' then
+    raise exception 'forbidden' using errcode='42501';
+  end if;
+  select * into v_document from public.document where id=p_document_id for update;
+  if not found or v_document.status <> 'quarantined'
+    or v_document.storage_bucket <> 'case-documents'
+    or v_document.storage_path is null then
+    return false;
+  end if;
+  if not exists (
+    select 1 from storage.objects o where o.bucket_id=v_document.storage_bucket
+      and o.name=v_document.storage_path
+  ) then return false; end if;
+  insert into public.document_scan_jobs(document_id,state)
+    values(p_document_id,'pending')
+    on conflict (document_id) do nothing;
+  if not found then return false; end if;
+  insert into public.document_scan_audit(document_id,event)
+    values(p_document_id,'queued');
+  return true;
+end $$;
+revoke all on function public.enqueue_document_scan_job(uuid) from public,anon,authenticated;
+grant execute on function public.enqueue_document_scan_job(uuid) to service_role;

@@ -172,6 +172,15 @@ export async function POST(request: Request) {
     return jsonError("O acesso ao processo foi revogado durante o envio. O arquivo foi bloqueado.", 403);
   }
 
+  // The RPC inserts queue job and audit in one database transaction.
+  // A failed RPC never leaves a successfully queued but unaudited job.
+  const { data: queued, error: queueError } = await admin.rpc("enqueue_document_scan_job", {
+    p_document_id: documentId
+  });
+  if (queueError || queued !== true) {
+    return jsonError("Arquivo permanece isolado; não foi possível agendar a verificação.", 503);
+  }
+
   return NextResponse.json({
     documentId,
     status: "quarantined",

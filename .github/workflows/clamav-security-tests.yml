@@ -1,0 +1,114 @@
+name: ClamAV isolated security tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/clamav-security-tests.yml'
+      - 'services/clamav-gateway/**'
+      - 'tests/clamav-gateway.test.mjs'
+      - 'tests/document-scan-flow.test.mjs'
+      - 'tests/document-scan-queue.test.mjs'
+      - 'tests/document-scan-worker-http.test.mjs'
+      - 'tests/document-next-http-disabled.sh'
+      - 'tests/document-download-policy.test.mjs'
+      - 'tests/document-download-authorization.test.mjs'
+      - 'src/features/documents/download-policy.ts'
+      - 'src/app/api/documentos/[documentId]/download/**'
+      - 'src/app/api/documentos/route.ts'
+      - 'src/lib/supabase/server.ts'
+      - 'src/lib/supabase/admin.ts'
+      - 'tests/document-scan-postgres.sql'
+      - 'tests/document-scan-postgres-advanced.sql'
+      - 'tests/document-scan-postgres-integration.sql'
+      - 'tests/document-scan-postgres-concurrency.sh'
+      - 'services/document-scan-worker/**'
+      - 'src/app/api/internal/documents/scan/**'
+      - 'src/app/api/documentos/upload/**'
+      - 'supabase/migrations/20261105_document_scan_queue_draft.sql'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clamav-security-tests
+  cancel-in-progress: false
+
+jobs:
+  scanner-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      JURISAI_SCANNER_TOKEN: "ci-only-local-test-token-not-for-production-00001"
+      CLAMD_HOST: 127.0.0.1
+      CLAMD_PORT: "3310"
+      SCANNER_LISTEN_HOST: 127.0.0.1
+      SCANNER_LISTEN_PORT: "8788"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm upload remains disabled in CI
+        run: |
+          test "${JURISAI_ENABLE_UPLOADS:-}" != "true"
+      - name: Verify Next.js upload endpoint remains disabled
+        run: npm install --ignore-scripts --no-audit --no-fund --package-lock=false && node --test tests/document-download-policy.test.mjs tests/document-download-authorization.test.mjs && bash tests/document-next-http-disabled.sh
+      - name: Start ClamAV in isolated container
+        run: |
+          docker run -d --name jurisai-clamav --network host --memory 4g clamav/clamav:stable
+          for i in $(seq 1 90); do
+            if timeout 2 bash -c 'echo PING > /dev/tcp/127.0.0.1/3310' 2>/dev/null; then
+              if docker exec jurisai-clamav clamdscan --version >/dev/null 2>&1; then
+                echo "ClamAV port available"
+                break
+              fi
+            fi
+            sleep 5
+          done
+          docker logs jurisai-clamav --tail 30
+      - name: Start gateway and execute scanner tests
+        run: |
+          node services/clamav-gateway/server.mjs &
+          echo $! > /tmp/jurisai-scanner-gateway.pid
+          for i in $(seq 1 40); do
+            if curl --silent --output /dev/null --max-time 2 http://127.0.0.1:8788/scan; then break; fi
+            if curl --silent --output /dev/null --max-time 2 -X POST http://127.0.0.1:8788/scan; then break; fi
+            if ! kill -0 "$(cat /tmp/jurisai-scanner-gateway.pid)" 2>/dev/null; then echo "Gateway exited unexpectedly"; exit 1; fi
+            sleep 1
+          done
+          curl --fail-with-body --silent --show-error --max-time 3 -X POST http://127.0.0.1:8788/scan -o /dev/null -w "Gateway HTTP status: %{http_code}\\n" || true
+          NODE_ENV=test node --test tests/clamav-gateway.test.mjs tests/document-scan-flow.test.mjs tests/document-scan-queue.test.mjs tests/document-scan-worker-http.test.mjs
+      - name: Test queue migration against ephemeral PostgreSQL
+        run: |
+          docker run -d --name jurisai-test-postgres -e POSTGRES_PASSWORD=local-ci-only postgres:16-alpine
+          postgres_ready=0
+          for i in $(seq 1 60); do
+            if docker exec jurisai-test-postgres pg_isready -U postgres -d postgres >/dev/null 2>&1; then
+              postgres_ready=1
+              break
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' jurisai-test-postgres)" != "true" ]; then
+              docker logs jurisai-test-postgres --tail 80
+              echo "PostgreSQL container exited before becoming ready"
+              exit 1
+            fi
+            sleep 2
+          done
+          if [ "$postgres_ready" -ne 1 ]; then
+            docker logs jurisai-test-postgres --tail 80
+            echo "PostgreSQL did not become ready within 120 seconds"
+            exit 1
+          fi
+          docker exec jurisai-test-postgres mkdir -p /work/supabase/migrations
+          docker cp supabase/migrations/20261105_document_scan_queue_draft.sql jurisai-test-postgres:/work/supabase/migrations/
+          docker cp tests/document-scan-postgres.sql jurisai-test-postgres:/work/document-scan-postgres.sql
+          docker cp tests/document-scan-postgres-advanced.sql jurisai-test-postgres:/work/document-scan-postgres-advanced.sql
+          docker cp tests/document-scan-postgres-integration.sql jurisai-test-postgres:/work/document-scan-postgres-integration.sql
+          docker exec -w /work jurisai-test-postgres psql -v ON_ERROR_STOP=1 -U postgres -d postgres -f document-scan-postgres.sql
+          docker exec -w /work jurisai-test-postgres psql -v ON_ERROR_STOP=1 -U postgres -d postgres -f document-scan-postgres-advanced.sql
+          bash tests/document-scan-postgres-concurrency.sh
+          docker exec -w /work jurisai-test-postgres psql -v ON_ERROR_STOP=1 -U postgres -d postgres -f document-scan-postgres-integration.sql
+      - name: Stop isolated resources
+        if: always()
+        run: |
+          if [ -f /tmp/jurisai-scanner-gateway.pid ]; then kill "$(cat /tmp/jurisai-scanner-gateway.pid)" || true; fi
+          docker rm -f jurisai-clamav || true
+          docker rm -f jurisai-test-postgres || true

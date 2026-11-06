@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { canSignDocumentDownload } from "@/features/documents/download-policy";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -21,27 +22,40 @@ export async function GET(_request: Request, context: RouteContext) {
 
   // The user's session is the authorization boundary. The RLS-protected
   // metadata query must succeed before the privileged Storage client is used.
-  const userClient = await createSupabaseServerClient();
-  const { data: authData, error: authError } = await userClient.auth.getUser();
+  let userClient: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  try {
+    userClient = await createSupabaseServerClient();
+  } catch {
+    return NextResponse.json({ error: "Serviço de autenticação indisponível." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
+  let authData: Awaited<ReturnType<typeof userClient.auth.getUser>>["data"];
+  let authError: Awaited<ReturnType<typeof userClient.auth.getUser>>["error"];
+  try {
+    ({ data: authData, error: authError } = await userClient.auth.getUser());
+  } catch {
+    return NextResponse.json({ error: "Serviço de autenticação indisponível." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
   if (authError || !authData.user) {
     return NextResponse.json({ error: "Autenticação necessária." }, { status: 401 });
   }
 
-  const { data: document, error } = await userClient
-    .from("document")
-    .select("id, file_name, status, storage_bucket, storage_path")
-    .eq("id", parsedId.data)
-    .maybeSingle();
+  let document: { file_name: string; status: string | null; storage_bucket: string | null; storage_path: string | null } | null;
+  let error: unknown;
+  try {
+    ({ data: document, error } = await userClient
+      .from("document")
+      .select("id, file_name, status, storage_bucket, storage_path")
+      .eq("id", parsedId.data)
+      .maybeSingle());
+  } catch {
+    return NextResponse.json({ error: "Não foi possível verificar o acesso ao documento." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
 
   if (error || !document) {
     return NextResponse.json({ error: "Documento não encontrado ou sem acesso." }, { status: 404 });
   }
 
-  if (
-    document.status !== "available" ||
-    document.storage_bucket !== "case-documents" ||
-    !document.storage_path
-  ) {
+  if (!canSignDocumentDownload(document)) {
     return NextResponse.json(
       { error: "Documento ainda está em quarentena ou não está disponível para download." },
       { status: 423, headers: { "Cache-Control": "no-store" } }
@@ -60,11 +74,20 @@ export async function GET(_request: Request, context: RouteContext) {
     );
   }
 
-  const { data: signed, error: signingError } = await admin.storage
-    .from("case-documents")
-    .createSignedUrl(document.storage_path, SIGNED_URL_SECONDS, {
-      download: document.file_name
-    });
+  let signed: { signedUrl: string } | null;
+  let signingError: unknown;
+  try {
+    ({ data: signed, error: signingError } = await admin.storage
+      .from("case-documents")
+      .createSignedUrl(document.storage_path, SIGNED_URL_SECONDS, {
+        download: document.file_name
+      }));
+  } catch {
+    return NextResponse.json(
+      { error: "Não foi possível autorizar o download." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
+    );
+  }
 
   if (signingError || !signed?.signedUrl) {
     return NextResponse.json(

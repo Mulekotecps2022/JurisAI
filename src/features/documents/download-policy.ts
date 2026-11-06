@@ -12,6 +12,6 @@ export function canSignDocumentDownload(document: {
     typeof document.storage_path === "string" &&
     document.storage_path.trim().length > 0 &&
     !document.storage_path.startsWith("/") &&
-    !/[\\\\\\x00-\\x1f\\x7f]/.test(document.storage_path) &&
+    !/[\\\x00-\x1f\x7f]/.test(document.storage_path) &&
     !document.storage_path.split("/").some((segment) => segment === "" || segment === "." || segment === "..");
 }

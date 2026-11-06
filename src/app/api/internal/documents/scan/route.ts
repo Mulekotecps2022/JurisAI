@@ -48,36 +48,48 @@ export async function POST(request: Request) {
   }
 
   let documentId: unknown;
+  let leaseToken: unknown;
   try {
-    documentId = (await request.json()).documentId;
+    const payload = await request.json();
+    documentId = payload.documentId;
+    leaseToken = payload.leaseToken;
   } catch {
     return reply("Requisição inválida.", 400);
   }
-  if (typeof documentId !== "string" || !ID_PATTERN.test(documentId)) {
+  if (typeof documentId !== "string" || !ID_PATTERN.test(documentId) ||
+      typeof leaseToken !== "string" || !ID_PATTERN.test(leaseToken)) {
     return reply("Identificador inválido.", 400);
   }
 
   const admin = createSupabaseAdminClient();
-  // Atomic claim prevents two workers from scanning the same quarantined row.
-  const { data: claimed, error: claimError } = await admin
-    .from("document")
-    .update({ status: "scanning" })
-    .eq("id", documentId)
-    .eq("status", "quarantined")
-    .select("id, case_id, storage_bucket, storage_path, sha256, size_bytes, mime_type")
-    .maybeSingle();
-  if (claimError) return reply("Falha ao reservar verificação.", 500);
+  // The worker must first claim the queue job through claim_document_scan_job.
+  // Never scan arbitrary quarantined documents without a valid active lease.
+  const { data: job, error: jobError } = await admin.from("document_scan_jobs")
+    .select("document_id").eq("document_id", documentId)
+    .eq("lease_token", leaseToken).eq("state", "processing")
+    .gt("lease_until", new Date().toISOString()).maybeSingle();
+  if (jobError) return reply("Fila indisponível.", 503);
+  if (!job) return reply("Reserva inválida ou expirada.", 409);
+
+  const { data: claimed, error: claimError } = await admin.from("document")
+    .select("id, case_id, storage_bucket, storage_path, sha256, size_bytes, mime_type, status")
+    .eq("id", documentId).in("status", ["quarantined", "scanning"]).maybeSingle();
+  if (claimError) return reply("Falha ao consultar documento.", 500);
   if (!claimed) return reply("Documento indisponível para verificação.", 409);
 
-  const failClosed = async (status: "quarantined" | "rejected") => {
-    await admin.from("document").update({ status }).eq("id", documentId).eq("status", "scanning");
+  const finish = async (verdict: "clean" | "infected" | "retry" | "integrity_failed", detail?: string) => {
+    const { data, error } = await admin.rpc("finish_document_scan_job", {
+      p_document_id: documentId, p_lease_token: leaseToken,
+      p_verdict: verdict, p_detail_code: detail ?? null
+    });
+    return !error && data === true;
   };
 
   try {
     if (claimed.storage_bucket !== BUCKET || !claimed.storage_path ||
         !claimed.storage_path.startsWith(`${claimed.case_id}/`) ||
         !claimed.sha256 || !claimed.size_bytes || claimed.size_bytes > MAX_BYTES) {
-      await failClosed("rejected");
+      if (!await finish("integrity_failed", "METADATA_INVALID")) return reply("Reserva expirada.", 409);
       return reply("Metadados do arquivo inconsistentes.", 422);
     }
 
@@ -86,7 +98,7 @@ export async function POST(request: Request) {
     const bytes = Buffer.from(await file.arrayBuffer());
     const digest = createHash("sha256").update(bytes).digest("hex");
     if (bytes.length !== claimed.size_bytes || digest !== claimed.sha256) {
-      await failClosed("rejected");
+      if (!await finish("integrity_failed", "HASH_MISMATCH")) return reply("Reserva expirada.", 409);
       return reply("Integridade do arquivo inválida.", 422);
     }
 
@@ -115,13 +127,12 @@ export async function POST(request: Request) {
     if (result.sha256 !== digest || !["clean", "infected"].includes(String(result.verdict))) {
       throw new Error("Resultado do scanner não verificável");
     }
-    const nextStatus = result.verdict === "clean" ? "available" : "rejected";
-    const { error: updateError } = await admin.from("document")
-      .update({ status: nextStatus }).eq("id", documentId).eq("status", "scanning");
-    if (updateError) throw new Error("Falha ao registrar resultado");
-    return reply(nextStatus === "available" ? "Verificação concluída." : "Arquivo rejeitado.", 200);
+    if (!await finish(result.verdict as "clean" | "infected")) {
+      return reply("Reserva expirada; resultado descartado.", 409);
+    }
+    return reply(result.verdict === "clean" ? "Verificação concluída." : "Arquivo rejeitado.", 200);
   } catch {
-    await failClosed("quarantined");
+    await finish("retry", "SCAN_INCONCLUSIVE");
     return reply("Verificação inconclusiva; arquivo permanece bloqueado.", 503);
   }
 }

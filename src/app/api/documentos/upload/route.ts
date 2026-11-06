@@ -172,6 +172,26 @@ export async function POST(request: Request) {
     return jsonError("O acesso ao processo foi revogado durante o envio. O arquivo foi bloqueado.", 403);
   }
 
+  // Queue only after the private object is stored and access revalidated.
+  // If enqueue fails, quarantine remains inaccessible; never report success.
+  const { error: queueError } = await admin.from("document_scan_jobs").insert({
+    document_id: documentId,
+    state: "pending"
+  });
+  if (queueError) {
+    return jsonError("Arquivo isolado, mas a verificação não pôde ser agendada. Envio permanece bloqueado.", 503);
+  }
+  const { error: auditError } = await admin.from("document_scan_audit").insert({
+    document_id: documentId,
+    event: "queued"
+  });
+  if (auditError) {
+    // Audit is mandatory: cancel the queued job before returning an error.
+    // Do not enable uploads until enqueue + audit are made atomic in the DB.
+    await admin.from("document_scan_jobs").delete().eq("document_id", documentId).eq("state", "pending");
+    return jsonError("Arquivo isolado; falha ao registrar auditoria. Envio permanece bloqueado.", 503);
+  }
+
   return NextResponse.json({
     documentId,
     status: "quarantined",

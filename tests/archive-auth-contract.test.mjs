@@ -106,7 +106,7 @@ test("AI official legal sources have whitelisted government and court URLs", asy
  assert.ok(catalog.includes("https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm"));
  assert.ok(catalog.includes("https://jurisprudencia.stf.jus.br/"));
  assert.ok(catalog.includes("https://www.stj.jus.br/sites/portalp/"));
- assert.ok(api.includes('sourceStatus: "official_links_not_live_verified"'));
+ assert.ok(api.includes('sourceStatus: verifiedLaw ? "official_article_retrieved" : "official_links_not_live_verified"'));
  assert.ok(api.includes("Nenhum artigo nem decisão foi validado"));
  assert.ok(ui.includes("Biblioteca de fontes jurídicas oficiais"));
  assert.ok(ui.includes("Links adicionais, não citações verificadas"));

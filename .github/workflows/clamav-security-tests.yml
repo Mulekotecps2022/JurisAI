@@ -11,6 +11,9 @@ on:
       - 'tests/document-scan-queue.test.mjs'
       - 'tests/document-scan-worker-http.test.mjs'
       - 'tests/document-next-http-disabled.sh'
+      - 'tests/document-download-policy.test.mjs'
+      - 'src/features/documents/download-policy.ts'
+      - 'src/app/api/documentos/[documentId]/download/**'
       - 'tests/document-scan-postgres.sql'
       - 'tests/document-scan-postgres-advanced.sql'
       - 'tests/document-scan-postgres-integration.sql'
@@ -43,7 +46,7 @@ jobs:
         run: |
           test "${JURISAI_ENABLE_UPLOADS:-}" != "true"
       - name: Verify Next.js upload endpoint remains disabled
-        run: npm install --ignore-scripts --no-audit --no-fund --package-lock=false && bash tests/document-next-http-disabled.sh
+        run: npm install --ignore-scripts --no-audit --no-fund --package-lock=false && node --test tests/document-download-policy.test.mjs && bash tests/document-next-http-disabled.sh
       - name: Start ClamAV in isolated container
         run: |
           docker run -d --name jurisai-clamav --network host --memory 4g clamav/clamav:stable

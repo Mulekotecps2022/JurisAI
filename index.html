@@ -21,11 +21,11 @@
             background: var(--bg-color);
             color: var(--text-main);
             margin: 0;
-            padding: 16px;
+            padding: clamp(16px, 3vw, 32px);
         }
 
         .container {
-            max-width: 600px;
+            max-width: 960px;
             margin: 0 auto;
         }
 
@@ -200,6 +200,13 @@
       const { createClient } = supabase;
       const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+      // Escapa conteúdo vindo do banco antes de inseri-lo no HTML.
+      function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[char]);
+      }
+
       // --- CARREGAR DADOS ---
       async function carregarTudo() {
         await carregarTenentes();
@@ -216,7 +223,7 @@
           .order('created_at', { ascending: false });
         
         if (error) {
-          listaEl.innerHTML = `<p class="vazio" style="color: red;">Erro: ${error.message}</p>`;
+          listaEl.innerHTML = `<p class="vazio" style="color: red;">Erro: ${escapeHTML(error.message)}</p>`;
           return;
         }
 
@@ -229,8 +236,8 @@
 
         let html = '<ul class="lista-itens">';
         data.forEach(item => {
-          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-PT') : '';
-          html += `<li class="item-registo"><span class="item-nome">${item.name || 'Sem nome'}</span><span class="item-data">${dataF}</span></li>`;
+          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-BR') : '';
+          html += `<li class="item-registo"><span class="item-nome">${escapeHTML(item.name || 'Sem nome')}</span><span class="item-data">${dataF}</span></li>`;
         });
         html += '</ul>';
         listaEl.innerHTML = html;
@@ -240,14 +247,14 @@
         const listaEl = document.getElementById('conteudo-lista-casos');
         const badgeEl = document.getElementById('badge-total-casos');
 
-        // Acedendo à tabela 'Case' com C maiúsculo
+        // A tabela deve ser referenciada sempre em minúsculas: 'case'.
         const { data, error } = await _supabase
           .from('case')
           .select('*')
           .order('created_at', { ascending: false });
         
         if (error) {
-          listaEl.innerHTML = `<p class="vazio" style="color: red;">Erro: ${error.message}</p>`;
+          listaEl.innerHTML = `<p class="vazio" style="color: red;">Erro: ${escapeHTML(error.message)}</p>`;
           return;
         }
 
@@ -260,9 +267,9 @@
 
         let html = '<ul class="lista-itens">';
         data.forEach(item => {
-          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-PT') : '';
+          const dataF = item.created_at ? new Date(item.created_at).toLocaleString('pt-BR') : '';
           const titulo = item.title || item.name || 'Caso sem título';
-          html += `<li class="item-registo"><span class="item-nome">${titulo}</span><span class="item-data">${dataF}</span></li>`;
+          html += `<li class="item-registo"><span class="item-nome">${escapeHTML(titulo)}</span><span class="item-data">${dataF}</span></li>`;
         });
         html += '</ul>';
         listaEl.innerHTML = html;
@@ -284,8 +291,8 @@
         const valor = input.value.trim();
         if (!valor) return alert('Escreva o título do caso.');
 
-        // Inserindo na tabela 'Case' com C maiúsculo
-        const { error } = await _supabase.from('Case').insert([{ title: valor }]);
+        // Inserindo na tabela 'case' com nome padronizado em minúsculas.
+        const { error } = await _supabase.from('case').insert([{ title: valor }]);
         if (error) {
           alert('Erro ao inserir caso: ' + error.message);
         } else {

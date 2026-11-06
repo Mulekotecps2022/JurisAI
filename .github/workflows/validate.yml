@@ -1,0 +1,84 @@
+name: Validate JurisAI
+
+on:
+  push:
+    branches:
+      - work/jurisai-primeira-entrega-2026-11-02
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Dependency security audit
+        run: npm audit --omit=dev --audit-level=high
+      - name: Full dependency security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Security contract tests
+        run: npm run test:security
+      - name: Production build
+        run: npm run build
+      - name: Cloudflare Workers build
+        run: npm run build:cf
+
+  database-security:
+    runs-on: ubuntu-latest
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Prepare isolated Supabase-compatible schema
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/fixtures/supabase_compat_prelude.sql
+      - name: Apply security migrations to disposable PostgreSQL
+        run: |
+          for migration in supabase/migrations/*.sql; do
+            echo "Applying $migration"
+            psql -v ON_ERROR_STOP=1 -f "$migration"
+          done
+      - name: Run structural SQL security assertions
+        run: |
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/app_user_profiles_security.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/case_ownership_security.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/legal_data_rls_security.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/private_document_storage.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/fk_supporting_indexes.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/people_contact_fields.sql
+      - name: Run multi-user RLS behavior tests
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/security_behavior.sql

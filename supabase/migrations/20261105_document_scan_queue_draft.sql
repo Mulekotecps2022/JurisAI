@@ -56,7 +56,7 @@ begin
     returning j.document_id
   )
   insert into public.document_scan_audit(document_id,event,detail_code)
-    select document_id,'recovered','LEASE_EXPIRED' from recovered;
+    select r.document_id,'recovered','LEASE_EXPIRED' from recovered r;
   with exhausted as (
     update public.document_scan_jobs j set
     state='dead', lease_until=null, lease_token=null,
@@ -65,7 +65,7 @@ begin
     returning j.document_id
   )
   insert into public.document_scan_audit(document_id,event,detail_code)
-    select document_id,'dead','LEASE_EXHAUSTED' from exhausted;
+    select e.document_id,'dead','LEASE_EXHAUSTED' from exhausted e;
   -- A single UPDATE with SKIP LOCKED makes the claim atomic.
   with candidate as (
     select j.document_id from public.document_scan_jobs j

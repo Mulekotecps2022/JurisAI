@@ -2,6 +2,11 @@ name: ClamAV isolated security tests
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/clamav-security-tests.yml'
+      - 'services/clamav-gateway/**'
+      - 'tests/clamav-gateway.test.mjs'
 
 permissions:
   contents: read

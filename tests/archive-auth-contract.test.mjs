@@ -78,7 +78,7 @@ test("AI assistant remains disabled without explicit verified free plan and serv
  assert.match(api, /if \(!isReady\(\)\) return json\(/);
  assert.match(api, /auth\.getUser\(\)/);
  assert.match(api, /try_consume_ai_free_request/);
- assert.match(api, /max_completion_tokens: 700/);
+ assert.match(api, /max_completion_tokens: 1500/);
  assert.match(api, /response\.status === 429/);
  assert.match(api, /https:\/\/api\.groq\.com\/openai\/v1\/chat\/completions/);
  assert.match(middleware, /pathname === "\/assistente"/);

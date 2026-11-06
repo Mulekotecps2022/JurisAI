@@ -22,7 +22,7 @@ test("only an available private-bucket document with an object key can be signed
   for (const bucket of ["public", "other", "", null]) {
     assert.equal(canSignDocumentDownload({ ...base, storage_bucket: bucket }), false, String(bucket));
   }
-  for (const path of ["", "   ", "/absolute/file.pdf", "case/../other/file.pdf", "case/./file.pdf", "case//file.pdf", "case/file.pdf/", null, undefined]) {
+  for (const path of ["", "   ", "/absolute/file.pdf", "case/../other/file.pdf", "case/./file.pdf", "case//file.pdf", "case/file.pdf/", "case\\file.pdf", "case/file\\name.pdf", null, undefined]) {
     assert.equal(canSignDocumentDownload({ ...base, storage_path: path }), false, String(path));
   }
 });

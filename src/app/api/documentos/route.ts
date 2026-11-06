@@ -6,7 +6,12 @@ function errorResponse(message: string, status: number) {
 }
 
 export async function GET() {
-  const supabase = await createSupabaseServerClient();
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  try {
+    supabase = await createSupabaseServerClient();
+  } catch {
+    return errorResponse("Serviço de autenticação indisponível.", 503);
+  }
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) return errorResponse("Autenticação necessária.", 401);
 
